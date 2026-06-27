@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>כאוס גרפי</title>
+  <meta name="theme-color" content="#0f0424">
   <script src="https://cdn.tailwindcss.com">
   </script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js">
@@ -11,6 +12,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js">
   </script>
   <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js">
+  </script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap');
@@ -21,19 +24,22 @@
     }
 
     body {
-      background: #f5f0e8;
+      background: #0f0424;
       min-height: 100vh;
       direction: rtl;
+      color: #fff;
     }
 
     .brutal-border {
-      border: 4px solid #000;
-      box-shadow: 6px 6px 0px #000;
+      border: 4px solid #00e5a0;
+      box-shadow: 6px 6px 0px #00e5a0;
+      background: #1c0a3e;
     }
 
     .brutal-border-sm {
-      border: 3px solid #000;
-      box-shadow: 4px 4px 0px #000;
+      border: 3px solid #00e5a0;
+      box-shadow: 4px 4px 0px #00e5a0;
+      background: #1c0a3e;
     }
 
     .brutal-btn {
@@ -44,6 +50,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      color: #000;
     }
 
     .brutal-btn:active {
@@ -58,21 +65,68 @@
       cursor: not-allowed;
     }
 
-    .brutal-input {
+    .brutal-btn-mint {
+      background: #00e5a0;
       border: 3px solid #000;
       box-shadow: 4px 4px 0px #000;
+      transition: all 0.05s ease;
+      cursor: pointer;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #000;
+    }
+
+    .brutal-btn-mint:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px #000;
+    }
+
+    .brutal-btn-mint:disabled {
+      opacity: 0.5;
+      transform: none;
+      box-shadow: 4px 4px 0px #000;
+      cursor: not-allowed;
+    }
+
+    .brutal-btn-purple {
+      background: #8b5cf6;
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0px #000;
+      transition: all 0.05s ease;
+      cursor: pointer;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .brutal-btn-purple:active {
+      transform: translate(3px, 3px);
+      box-shadow: 1px 1px 0px #000;
+    }
+
+    .brutal-input {
+      border: 3px solid #00e5a0;
+      box-shadow: 4px 4px 0px #00e5a0;
       outline: none;
       transition: all 0.1s;
+      background: #2a1452;
+      color: #fff;
     }
 
     .brutal-input:focus {
-      box-shadow: 2px 2px 0px #000;
+      box-shadow: 2px 2px 0px #00e5a0;
       transform: translate(2px, 2px);
     }
 
+    .brutal-input::placeholder {
+      color: #7c6a9e;
+    }
+
     .canvas-wrapper {
-      border: 4px solid #000;
-      box-shadow: 6px 6px 0px #000;
+      border: 4px solid #00e5a0;
+      box-shadow: 6px 6px 0px #00e5a0;
       background: #fff;
       touch-action: none;
     }
@@ -87,9 +141,9 @@
     }
 
     .color-btn.active {
-      border: 4px solid #000;
+      border: 4px solid #00e5a0;
       transform: scale(1.15);
-      box-shadow: 2px 2px 0px #000;
+      box-shadow: 2px 2px 0px #00e5a0;
     }
 
     .width-btn {
@@ -103,48 +157,50 @@
     }
 
     .width-btn.active {
-      background: #ffed4a;
+      background: #00e5a0;
       box-shadow: 2px 2px 0px #000;
       transform: scale(1.1);
     }
 
     .player-avatar {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      border: 3px solid #000;
-      background: #fff;
+      font-size: 26px;
+      border: 3px solid #00e5a0;
+      background: #2a1452;
     }
 
     .player-card {
-      border: 3px solid #000;
-      background: #fff;
-      box-shadow: 4px 4px 0px #000;
+      border: 3px solid #00e5a0;
+      background: #2a1452;
+      box-shadow: 4px 4px 0px #00e5a0;
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 8px 12px;
+      color: #fff;
     }
 
     .timer-ring {
       width: 60px;
       height: 60px;
-      border: 4px solid #000;
+      border: 4px solid #00e5a0;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 24px;
       font-weight: 900;
-      background: #fff;
+      background: #1c0a3e;
+      color: #00e5a0;
     }
 
     .timer-ring.urgent {
-      border-color: #ff4444;
-      color: #ff4444;
+      border-color: #ff6b6b;
+      color: #ff6b6b;
       animation: pulse 0.5s infinite;
     }
 
@@ -171,10 +227,19 @@
     }
 
     .exhibition-drawing {
-      border: 4px solid #000;
-      box-shadow: 6px 6px 0px #000;
+      border: 4px solid #00e5a0;
+      box-shadow: 6px 6px 0px #00e5a0;
       background: #fff;
       overflow: hidden;
+    }
+
+    .exhibition-drawing .header {
+      background: #00e5a0;
+      color: #000;
+      font-weight: 900;
+      text-align: center;
+      padding: 4px;
+      font-size: 14px;
     }
 
     .reveal-overlay {
@@ -197,42 +262,18 @@
       opacity: 0;
     }
 
-    .stagger-in>*:nth-child(1) {
-      animation-delay: 0.05s;
-    }
-    .stagger-in>*:nth-child(2) {
-      animation-delay: 0.1s;
-    }
-    .stagger-in>*:nth-child(3) {
-      animation-delay: 0.15s;
-    }
-    .stagger-in>*:nth-child(4) {
-      animation-delay: 0.2s;
-    }
-    .stagger-in>*:nth-child(5) {
-      animation-delay: 0.25s;
-    }
-    .stagger-in>*:nth-child(6) {
-      animation-delay: 0.3s;
-    }
-    .stagger-in>*:nth-child(7) {
-      animation-delay: 0.35s;
-    }
-    .stagger-in>*:nth-child(8) {
-      animation-delay: 0.4s;
-    }
-    .stagger-in>*:nth-child(9) {
-      animation-delay: 0.45s;
-    }
-    .stagger-in>*:nth-child(10) {
-      animation-delay: 0.5s;
-    }
-    .stagger-in>*:nth-child(11) {
-      animation-delay: 0.55s;
-    }
-    .stagger-in>*:nth-child(12) {
-      animation-delay: 0.6s;
-    }
+    .stagger-in>*:nth-child(1) { animation-delay: 0.05s; }
+    .stagger-in>*:nth-child(2) { animation-delay: 0.1s; }
+    .stagger-in>*:nth-child(3) { animation-delay: 0.15s; }
+    .stagger-in>*:nth-child(4) { animation-delay: 0.2s; }
+    .stagger-in>*:nth-child(5) { animation-delay: 0.25s; }
+    .stagger-in>*:nth-child(6) { animation-delay: 0.3s; }
+    .stagger-in>*:nth-child(7) { animation-delay: 0.35s; }
+    .stagger-in>*:nth-child(8) { animation-delay: 0.4s; }
+    .stagger-in>*:nth-child(9) { animation-delay: 0.45s; }
+    .stagger-in>*:nth-child(10) { animation-delay: 0.5s; }
+    .stagger-in>*:nth-child(11) { animation-delay: 0.55s; }
+    .stagger-in>*:nth-child(12) { animation-delay: 0.6s; }
 
     @keyframes slideUp {
       0% {
@@ -265,23 +306,20 @@
     }
 
     .impostor-badge {
-      background: #000;
-      color: #fff;
+      background: #00e5a0;
+      color: #000;
       font-weight: 900;
       font-size: 11px;
       padding: 2px 8px;
       letter-spacing: 0.5px;
     }
 
-    .host-only {
-      display: none;
-    }
-
-    .phase-drawing .drawing-tools {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      align-items: center;
+    .host-badge {
+      background: #8b5cf6;
+      color: #fff;
+      font-weight: 900;
+      font-size: 11px;
+      padding: 2px 8px;
     }
 
     @media (max-width: 640px) {
@@ -291,9 +329,9 @@
         font-size: 20px;
       }
       .player-avatar {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
+        width: 44px;
+        height: 44px;
+        font-size: 22px;
       }
       .drawing-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -302,24 +340,13 @@
     }
 
     .vote-count {
-      background: #000;
-      color: #fff;
+      background: #00e5a0;
+      color: #000;
       font-weight: 700;
       font-size: 12px;
       padding: 0 6px;
       min-width: 20px;
       text-align: center;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar {
-      width: 6px;
-    }
-    .scrollbar-thin::-webkit-scrollbar-track {
-      background: #f0e8d8;
-    }
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-      background: #000;
-      border-radius: 0;
     }
 
     canvas {
@@ -328,31 +355,162 @@
       height: 100%;
     }
 
-    .badge-new {
-      background: #ff4444;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 900;
-      padding: 2px 6px;
-    }
-
     .word-display {
-      border: 4px solid #000;
+      border: 4px solid #00e5a0;
       padding: 12px 24px;
       font-size: 28px;
       font-weight: 900;
-      background: #ffed4a;
+      background: #00e5a0;
+      color: #000;
       display: inline-block;
       box-shadow: 4px 4px 0px #000;
     }
 
+    .word-display.impostor {
+      background: #ff6b6b;
+      border-color: #000;
+      color: #fff;
+    }
+
     .room-label {
       border: 3px solid #000;
-      background: #48dbfb;
-      color: #000;
+      background: #8b5cf6;
+      color: #fff;
       font-weight: 900;
       font-size: 14px;
       padding: 4px 12px;
+    }
+
+    .avatar-option {
+      width: 48px;
+      height: 48px;
+      border: 3px solid #00e5a0;
+      background: #2a1452;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: all 0.1s;
+    }
+
+    .avatar-option:hover {
+      background: #3b1f6e;
+      transform: scale(1.1);
+    }
+
+    .avatar-option.selected {
+      border: 4px solid #00e5a0;
+      background: #00e5a0;
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .avatar-preview {
+      width: 80px;
+      height: 80px;
+      border: 4px solid #00e5a0;
+      background: #2a1452;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      box-shadow: 4px 4px 0px #00e5a0;
+    }
+
+    /* Electric shock effect */
+    .shock {
+      animation: shockAnim 0.15s ease-in-out 6;
+    }
+
+    @keyframes shockAnim {
+      0% { transform: translate(0, 0) rotate(0deg); border-color: #00e5a0; box-shadow: 6px 6px 0px #00e5a0; }
+      20% { transform: translate(-3px, 2px) rotate(-1deg); border-color: #ff6b6b; box-shadow: 0 0 20px #ff6b6b, 6px 6px 0px #000; }
+      40% { transform: translate(3px, -1px) rotate(1deg); border-color: #00e5a0; box-shadow: 0 0 20px #00e5a0, 6px 6px 0px #000; }
+      60% { transform: translate(-2px, -2px) rotate(-0.5deg); border-color: #8b5cf6; box-shadow: 0 0 30px #8b5cf6, 6px 6px 0px #000; }
+      80% { transform: translate(2px, 1px) rotate(0.5deg); border-color: #ff6b6b; box-shadow: 0 0 20px #ff6b6b, 6px 6px 0px #000; }
+      100% { transform: translate(0, 0) rotate(0deg); border-color: #00e5a0; box-shadow: 6px 6px 0px #00e5a0; }
+    }
+
+    .shock-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, rgba(0, 229, 160, 0.15) 0%, transparent 70%);
+      animation: shockFade 0.9s ease-out forwards;
+    }
+
+    @keyframes shockFade {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      border: 3px solid #000;
+      padding: 12px 24px;
+      font-weight: 700;
+      font-size: 16px;
+      animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.5s forwards;
+      background: #00e5a0;
+      color: #000;
+    }
+
+    .toast.error {
+      background: #ff6b6b;
+      color: #fff;
+    }
+
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @keyframes toastOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    }
+
+    .upload-zone {
+      border: 3px dashed #00e5a0;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      background: #2a1452;
+      transition: all 0.2s;
+    }
+
+    .upload-zone:hover {
+      background: #3b1f6e;
+    }
+
+    .hint-text {
+      color: #8b7aaa;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .section-title {
+      color: #00e5a0;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Custom scrollbar for dark theme */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f0424;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #00e5a0;
+      border: 2px solid #000;
     }
   </style>
 </head>
@@ -386,6 +544,8 @@
     // CONSTANTS
     // ============================================================
     const AVATARS = ['🦊', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄', '🐧', '🐰', '🦉', '🐺', '🐙', '🦋', '🐞', '🐳'];
+    const VEGETABLES = ['🥕', '🍅', '🥦', '🌽', '🫑', '🥬', '🧅', '🥒', '🍆', '🥔', '🧄', '🫒', '🍄', '🥝', '🍑'];
+    const EMOTIONS = ['😊', '😡', '🥱', '😱', '😍', '😎', '🤔', '😭', '🤩', '😈', '🥺', '😴', '🤯', '🥳', '👻'];
     const COLORS = ['#000000', '#FF0000', '#0000FF', '#00AA00', '#FFD700', '#800080', '#FF8C00', '#FF69B4'];
     const WIDTHS = [3, 6, 12];
     const DRAWING_DURATION = 45;
@@ -479,6 +639,51 @@
       return new Promise(r => setTimeout(r, ms));
     }
 
+    function makeAvatar(e) {
+      return e.avatar || (e.veg && e.emotion ? e.veg + e.emotion : '🥕😊');
+    }
+
+    function toast(msg, isError) {
+      const el = document.createElement('div');
+      el.className = 'toast' + (isError ? ' error' : '');
+      el.textContent = msg;
+      el.style.textAlign = 'center';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    function exportWordTemplate() {
+      if (typeof XLSX === 'undefined') { toast('ספריית Excel לא נטענה', true); return; }
+      const ws = XLSX.utils.aoa_to_sheet([['Word', 'Category'], ...WORD_POOL.map(w => [w.word, w.category])]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Words');
+      XLSX.writeFile(wb, 'kaos_grafi_words.xlsx');
+      toast('קובץ הורד! ערוך אותו והעלה בחזרה');
+    }
+
+    function importWordList(file) {
+      if (typeof XLSX === 'undefined') { toast('ספריית Excel לא נטענה', true); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(ws);
+          if (!data || data.length < 2) { toast('צריך לפחות 2 מילים', true); return; }
+          const imported = data.map(row => ({
+            word: String(row.Word || row.word || '').trim(),
+            category: String(row.Category || row.category || '').trim() || 'כללי',
+          })).filter(w => w.word);
+          if (imported.length < 2) { toast('צריך לפחות 2 מילים', true); return; }
+          window._customWords = imported;
+          toast('יובאו ' + imported.length + ' מילים!');
+        } catch (err) {
+          toast('שגיאה בקריאת הקובץ: ' + err.message, true);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
     // ============================================================
     // AUTH
     // ============================================================
@@ -500,14 +705,16 @@
     // ============================================================
     // GAME OPERATIONS
     // ============================================================
-    async function createGame(playerName) {
+    async function createGame(playerName, veg, emotion) {
       await ensureAuth();
       const gameId = randomCode();
-      const avatar = pick(AVATARS);
+      const avatar = (veg || '🥕') + (emotion || '😊');
       const player = {
         id: state.user.uid,
         name: playerName,
         avatar: avatar,
+        veg: veg || '🥕',
+        emotion: emotion || '😊',
         roomIndex: null,
         isImpostor: false,
         word: '',
@@ -538,18 +745,20 @@
       return gameId;
     }
 
-    async function joinGame(gameId, playerName) {
+    async function joinGame(gameId, playerName, veg, emotion) {
       await ensureAuth();
       const doc = await db.collection('games').doc(gameId).get();
       if (!doc.exists) throw new Error('החדר לא נמצא');
       const data = doc.data();
       if (data.phase !== 'lobby') throw new Error('המשחק כבר התחיל');
 
-      const avatar = pick(AVATARS);
+      const avatar = (veg || '🥕') + (emotion || '😊');
       const player = {
         id: state.user.uid,
         name: playerName,
         avatar: avatar,
+        veg: veg || '🥕',
+        emotion: emotion || '😊',
         roomIndex: null,
         isImpostor: false,
         word: '',
@@ -661,10 +870,12 @@
         roomAllocations.push(shuffled.slice(start, end));
       }
 
+      const wordPool = window._customWords || WORD_POOL;
+
       for (let i = 0; i < roomAllocations.length; i++) {
         const roomPlayers = roomAllocations[i];
         if (roomPlayers.length < 2) continue;
-        const wordEntry = WORD_POOL[i % WORD_POOL.length];
+        const wordEntry = wordPool[i % wordPool.length];
         const impostorIdx = Math.floor(Math.random() * roomPlayers.length);
 
         const room = {
@@ -969,56 +1180,114 @@
 
     // ---- JOIN SCREEN ----
     function renderJoin(container) {
+      const selectedVegIdx = state._selVeg ?? 0;
+      const selectedEmoIdx = state._selEmo ?? 0;
+
       container.innerHTML = `
-        <div class="min-h-screen flex items-center justify-center">
-          <div class="w-full max-w-md">
-            <div class="brutal-border bg-yellow-300 p-8 text-center mb-8" style="transform:rotate(-1deg)">
-              <h1 class="text-5xl font-black mb-2">כאוס גרפי</h1>
-              <p class="text-lg font-bold">משחק הציור ההמוני</p>
+        <div class="min-h-screen flex items-center justify-center p-4">
+          <div class="w-full max-w-md space-y-4">
+            <div class="brutal-border p-6 text-center">
+              <h1 class="text-5xl font-black mb-1 text-white">כאוס גרפי</h1>
+              <p class="text-lg font-bold" style="color:#00e5a0">משחק הציור ההמוני</p>
             </div>
-            <div class="brutal-border bg-white p-6 space-y-4">
+
+            <div class="brutal-border p-6 space-y-4">
               <div>
-                <label class="block font-bold mb-1">השם שלך</label>
-                <input id="join-name" class="brutal-input w-full p-3 text-lg font-bold" placeholder="אורי" maxlength="12" value="${state.user?.displayName || ''}">
+                <label class="section-title block mb-1">השם שלך</label>
+                <input id="join-name" class="brutal-input w-full p-3 text-lg font-bold" placeholder="אורי" maxlength="12" value="${state.playerName || ''}">
               </div>
+
               <div>
-                <label class="block font-bold mb-1">קוד חדר</label>
-                <div class="flex gap-2">
-                  <input id="join-code" class="brutal-input flex-1 p-3 text-lg font-bold text-center tracking-widest uppercase" placeholder="ABCD" maxlength="4" style="letter-spacing:4px">
-                  <button id="btn-join" class="brutal-btn bg-blue-400 px-6 py-3 text-lg font-bold">הצטרף</button>
+                <label class="section-title block mb-2">🍳 מטבח האמוג'י — בנה את הדמות שלך</label>
+                <div class="flex items-center gap-4 mb-3">
+                  <div class="avatar-preview" id="avatar-preview">${VEGETABLES[selectedVegIdx]}${EMOTIONS[selectedEmoIdx]}</div>
+                  <div class="flex-1 text-sm hint-text">
+                    בחר ירק + רגש, כולם יראו את הדמות שלך!
+                  </div>
+                </div>
+                <div class="section-title mb-1" style="font-size:11px">ירק</div>
+                <div class="flex flex-wrap gap-1 mb-2" id="veg-selector">
+                  ${VEGETABLES.map((v, i) => `
+                    <button class="avatar-option ${i === selectedVegIdx ? 'selected' : ''}" data-idx="${i}">${v}</button>
+                  `).join('')}
+                </div>
+                <div class="section-title mb-1" style="font-size:11px">רגש</div>
+                <div class="flex flex-wrap gap-1 mb-2" id="emo-selector">
+                  ${EMOTIONS.map((e, i) => `
+                    <button class="avatar-option ${i === selectedEmoIdx ? 'selected' : ''}" data-idx="${i}">${e}</button>
+                  `).join('')}
                 </div>
               </div>
-              <div class="text-center">
-                <div class="border-t-4 border-dashed border-black my-4"></div>
-                <button id="btn-create" class="brutal-btn bg-pink-400 w-full py-4 text-xl font-bold">צור משחק חדש</button>
+
+              <div>
+                <label class="section-title block mb-1">קוד חדר</label>
+                <div class="flex gap-2">
+                  <input id="join-code" class="brutal-input flex-1 p-3 text-lg font-bold text-center tracking-widest uppercase" placeholder="ABCD" maxlength="4" style="letter-spacing:4px">
+                  <button id="btn-join" class="brutal-btn-purple px-6 py-3 text-lg font-bold">הצטרף</button>
+                </div>
               </div>
+
+              <div class="border-t-4 border-dashed" style="border-color:#00e5a0"></div>
+              <button id="btn-create" class="brutal-btn-mint w-full py-4 text-xl font-bold">צור משחק חדש</button>
             </div>
-            <div id="join-error" class="mt-4 brutal-border-sm bg-red-300 p-3 font-bold hidden"></div>
+
+            <div id="join-error" class="brutal-border-sm p-3 font-bold hidden" style="background:#ff6b6b;color:#fff"></div>
           </div>
         </div>
       `;
 
+      // Avatar builder listeners
+      const updatePreview = () => {
+        const preview = $('#avatar-preview');
+        if (preview) preview.textContent = VEGETABLES[state._selVeg ?? 0] + EMOTIONS[state._selEmo ?? 0];
+      };
+
+      $$('#veg-selector .avatar-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state._selVeg = parseInt(btn.dataset.idx);
+          $$('#veg-selector .avatar-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          updatePreview();
+        });
+      });
+
+      $$('#emo-selector .avatar-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state._selEmo = parseInt(btn.dataset.idx);
+          $$('#emo-selector .avatar-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          updatePreview();
+        });
+      });
+
       $('#join-name').addEventListener('input', () => {
         state.playerName = $('#join-name').value;
       });
+
       $('#btn-create').addEventListener('click', async () => {
         const name = $('#join-name').value.trim();
         if (!name) { showError('נא להזין שם'); return; }
         try {
-          const gid = await createGame(name);
+          const veg = VEGETABLES[state._selVeg ?? 0];
+          const emo = EMOTIONS[state._selEmo ?? 0];
+          await createGame(name, veg, emo);
           state.playerName = name;
         } catch (e) { showError(e.message); }
       });
+
       $('#btn-join').addEventListener('click', async () => {
         const name = $('#join-name').value.trim();
         const code = $('#join-code').value.trim().toUpperCase();
         if (!name) { showError('נא להזין שם'); return; }
         if (!code || code.length !== 4) { showError('נא להזין קוד חדר תקין (4 אותיות)'); return; }
         try {
-          await joinGame(code, name);
+          const veg = VEGETABLES[state._selVeg ?? 0];
+          const emo = EMOTIONS[state._selEmo ?? 0];
+          await joinGame(code, name, veg, emo);
           state.playerName = name;
         } catch (e) { showError(e.message); }
       });
+
       $('#join-code').addEventListener('keydown', e => {
         if (e.key === 'Enter') $('#btn-join').click();
       });
@@ -1037,36 +1306,43 @@
     function renderLobby(container, data) {
       const players = Object.values(data.players || {});
       const isHost = state.isHost;
+      const hasCustomWords = !!window._customWords;
 
       container.innerHTML = `
         <div class="max-w-3xl mx-auto">
           <div class="text-center mb-6">
-            <h1 class="text-4xl font-black mb-2">🎨 כאוס גרפי</h1>
-            <div class="brutal-border-sm bg-white inline-block px-6 py-2">
+            <h1 class="text-4xl font-black mb-2 text-white">🎨 כאוס גרפי</h1>
+            <div class="brutal-border-sm inline-block px-6 py-2">
               <span class="font-bold">קוד חדר:</span>
-              <span class="text-2xl font-black tracking-widest ml-2">${state.gameId}</span>
+              <span class="text-2xl font-black tracking-widest ml-2" style="color:#00e5a0">${state.gameId}</span>
             </div>
           </div>
 
-          <div class="brutal-border bg-white p-6 mb-6">
+          <div class="brutal-border p-6 mb-6">
             <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-black">שחקנים (${players.length})</h2>
-              ${isHost ? `<button id="btn-start" class="brutal-btn bg-green-400 px-6 py-2 text-lg font-bold">התחל משחק!</button>` : `<div class="font-bold text-gray-500">ממתין שהמארח יתחיל...</div>`}
+              <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
+              ${isHost ? `<button id="btn-start" class="brutal-btn-mint px-6 py-2 text-lg font-bold">התחל משחק!</button>` : `<div class="font-bold" style="color:#8b7aaa">ממתין שהמארח יתחיל...</div>`}
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 stagger-in">
               ${players.map(p => `
                 <div class="player-card">
                   <div class="player-avatar">${p.avatar}</div>
                   <span class="font-bold text-sm truncate">${p.name}</span>
-                  ${p.id === data.hostId ? '<span class="impostor-badge mr-auto">מארח</span>' : ''}
+                  ${p.id === data.hostId ? '<span class="host-badge mr-auto">מארח</span>' : ''}
                 </div>
               `).join('')}
             </div>
+            <div class="mt-3 flex gap-2 flex-wrap">
+              <button id="btn-export-words" class="brutal-btn-purple px-3 py-1 text-sm font-bold">📥 ייצוא מילים</button>
+              <button id="btn-import-words" class="brutal-btn-purple px-3 py-1 text-sm font-bold">📤 יבוא מילים</button>
+              <input id="file-input" type="file" accept=".xlsx,.xls" style="display:none">
+              ${hasCustomWords ? `<span class="text-xs font-bold px-2 py-1" style="background:#00e5a0;color:#000">✅ מילים מותאמות</span>` : ''}
+            </div>
           </div>
 
-          <div class="brutal-border-sm bg-yellow-200 p-4 text-center">
-            <p class="font-bold">📱 שתף את קוד החדר עם החברים!</p>
-            <p class="text-sm">כולם צריכים להזין את הקוד במכשיר שלהם</p>
+          <div class="brutal-border-sm p-4 text-center">
+            <p class="font-bold" style="color:#00e5a0">📱 שתף את קוד החדר עם החברים!</p>
+            <p class="text-sm hint-text">כולם צריכים להזין את הקוד במכשיר שלהם</p>
           </div>
         </div>
       `;
@@ -1074,6 +1350,19 @@
       if (isHost) {
         $('#btn-start').addEventListener('click', startGame);
       }
+
+      $('#btn-export-words').addEventListener('click', exportWordTemplate);
+
+      $('#btn-import-words').addEventListener('click', () => {
+        $('#file-input').click();
+      });
+
+      $('#file-input').addEventListener('change', e => {
+        if (e.target.files[0]) {
+          importWordList(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
     }
 
     // ---- DRAWING (COLLABORATIVE) ----
@@ -1109,7 +1398,7 @@
 
           <div class="flex flex-wrap gap-1 mb-2">
             ${roomPlayers.map(p => `
-              <div class="flex items-center gap-1 bg-white border-2 border-black px-2 py-0.5 text-xs font-bold">
+              <div class="flex items-center gap-1 border-2 border-black px-2 py-0.5 text-xs font-bold" style="background:#2a1452;color:#fff">
                 <span>${p.avatar}</span>
                 <span>${p.name}</span>
               </div>
@@ -1144,14 +1433,14 @@
                 </button>
               `).join('')}
             </div>
-            <button id="btn-clear-local" class="brutal-btn bg-red-300 px-3 py-1 font-bold text-sm">נקה את שלי</button>
+            <button id="btn-clear-local" class="brutal-btn-purple px-3 py-1 font-bold text-sm">נקה את שלי</button>
           </div>
 
           ${state.isHost ? `
-            <div class="mt-3 brutal-border-sm bg-white p-3">
+            <div class="mt-3 brutal-border-sm p-3">
               <div class="flex justify-between items-center">
-                <span class="font-bold text-sm">כולם מציירים בו-זמנית</span>
-                <button id="btn-advance-exh" class="brutal-btn bg-blue-400 px-4 py-1 text-sm font-bold">סיום ציור → תערוכה</button>
+                <span class="font-bold text-sm text-white">כולם מציירים בו-זמנית</span>
+                <button id="btn-advance-exh" class="brutal-btn-mint px-4 py-1 text-sm font-bold">סיום ציור → תערוכה</button>
               </div>
             </div>
           ` : ''}
@@ -1251,8 +1540,8 @@
       container.innerHTML = `
         <div class="max-w-5xl mx-auto">
           <div class="text-center mb-6">
-            <h1 class="text-4xl font-black mb-2">🖼️ תערוכת הכאוס</h1>
-            <p class="font-bold text-lg">כל הציורים לפניך! הצבע על המתחזה בחדר שלך</p>
+            <h1 class="text-4xl font-black mb-2 text-white">🖼️ תערוכת הכאוס</h1>
+            <p class="font-bold text-lg" style="color:#00e5a0">כל הציורים לפניך! הצבע על המתחזה בחדר שלך</p>
           </div>
 
           <div class="drawing-grid stagger-in">
@@ -1261,17 +1550,17 @@
               const canvasId = `exh-canvas-${ri}`;
               return `
                 <div class="exhibition-drawing">
-                  <div class="bg-black text-white font-bold text-center py-1 text-sm">חדר ${ri+1}</div>
+                  <div class="header">חדר ${ri+1}</div>
                   <div class="p-2">
                     <div style="aspect-ratio:4/3;background:#fff;position:relative">
                       <canvas id="${canvasId}" style="width:100%;height:100%"></canvas>
                     </div>
                     <div class="flex flex-wrap gap-1 mt-2">
                       ${roomPlayers.map(p => `
-                        <div class="flex items-center gap-1 bg-gray-100 border-2 border-black px-2 py-1 text-xs font-bold">
+                        <div class="flex items-center gap-1 border-2 border-black px-2 py-1 text-xs font-bold" style="background:#2a1452;color:#fff">
                           <span>${p.avatar}</span>
                           <span>${p.name}</span>
-                          ${p.id === data.hostId ? '<span class="impostor-badge" style="font-size:9px">מארח</span>' : ''}
+                          ${p.id === data.hostId ? '<span class="host-badge" style="font-size:9px">מארח</span>' : ''}
                         </div>
                       `).join('')}
                     </div>
@@ -1282,9 +1571,9 @@
           </div>
 
           ${!hasVoted && myRoomIndex !== null && myRoomIndex !== undefined ? `
-            <div id="vote-section" class="mt-6 brutal-border bg-white p-6">
-              <h2 class="text-xl font-black mb-3">🗳️ הצבע על המתחזה בחדר ${myRoomIndex+1}</h2>
-              <p class="text-sm font-bold mb-3">מי לדעתך הוא המתחזה?</p>
+            <div id="vote-section" class="mt-6 brutal-border p-6">
+              <h2 class="text-xl font-black mb-3 text-white">🗳️ הצבע על המתחזה בחדר ${myRoomIndex+1}</h2>
+              <p class="text-sm font-bold mb-3 hint-text">מי לדעתך הוא המתחזה?</p>
               <div class="flex flex-wrap gap-3">
                 ${(data.rooms[myRoomIndex]?.playerIds || [])
                   .filter(pid => pid !== state.user?.uid)
@@ -1292,7 +1581,7 @@
                     const p = data.players[pid];
                     if (!p) return '';
                     return `
-                      <button class="vote-player-btn brutal-btn bg-white px-4 py-3 flex items-center gap-2 hover:bg-yellow-200" data-target="${pid}">
+                      <button class="vote-player-btn brutal-btn-mint px-4 py-3 flex items-center gap-2" data-target="${pid}">
                         <span class="text-2xl">${p.avatar}</span>
                         <span class="font-bold">${p.name}</span>
                       </button>
@@ -1301,18 +1590,18 @@
               </div>
             </div>
           ` : hasVoted ? `
-            <div class="mt-6 brutal-border-sm bg-green-200 p-4 text-center">
+            <div class="mt-6 brutal-border-sm p-4 text-center" style="background:#00e5a0;color:#000">
               <p class="font-bold text-lg">✅ הצבעת! ממתין לשאר השחקנים...</p>
             </div>
           ` : ''}
 
           ${state.isHost && allVotesIn(data) ? `
             <div class="mt-6 text-center">
-              <button id="btn-to-reveal" class="brutal-btn bg-pink-400 px-8 py-4 text-xl font-bold">🔍 גלו את המתחזים!</button>
+              <button id="btn-to-reveal" class="brutal-btn-mint px-8 py-4 text-xl font-bold">🔍 גלו את המתחזים!</button>
             </div>
           ` : state.isHost ? `
             <div class="mt-6 text-center">
-              <div class="brutal-border-sm bg-yellow-100 p-4 font-bold">
+              <div class="brutal-border-sm p-4 font-bold">
                 ממתין להצבעות... (${Object.keys(data.votes || {}).length}/${Object.values(data.players).filter(p => p.roomIndex !== null).length})
               </div>
             </div>
@@ -1382,34 +1671,35 @@
       container.innerHTML = `
         <div class="max-w-3xl mx-auto reveal-overlay">
           <div class="text-center mb-6">
-            <h1 class="text-4xl font-black mb-2">🔍 חשיפה! חדר ${state.revealStep+1}</h1>
+            <h1 class="text-4xl font-black mb-2" style="color:#00e5a0">🔍 חשיפה! חדר ${state.revealStep+1}</h1>
           </div>
 
-          <div class="brutal-border bg-white p-6 mb-6">
+          <div class="brutal-border p-6 mb-6" style="position:relative">
             <div style="aspect-ratio:4/3;max-height:40vh;background:#fff" class="mb-4">
               <canvas id="reveal-canvas" style="width:100%;height:100%"></canvas>
             </div>
 
             <div class="flex flex-wrap gap-2 mb-4 justify-center">
               ${roomPlayers.map(p => `
-                <div class="player-card ${p.id === impostorId ? 'bg-red-100 border-red-500' : ''}">
+                <div class="player-card ${p.id === impostorId ? 'shock' : ''}" style="${p.id === impostorId ? 'border-color:#ff6b6b;background:#2a1452;position:relative' : ''}">
                   <div class="player-avatar" style="width:40px;height:40px;font-size:20px">${p.avatar}</div>
                   <span class="font-bold">${p.name}</span>
-                  ${p.id === impostorId ? '<span class="impostor-badge">🕵️ מִתְחַזֶה</span>' : ''}
+                  ${p.id === impostorId ? '<span class="impostor-badge">⚡ מִתְחַזֶה ⚡</span>' : ''}
                   ${(votes.find(v => v.voterId === p.id)?.targetId) ? `
                     <span class="text-xs font-bold mr-1">
                       → ${data.players[votes.find(v => v.voterId === p.id).targetId]?.name || '?'}
                     </span>
                   ` : ''}
                   ${(votes.find(v => v.voterId === p.id)?.targetId === impostorId) ? '✅' : (votes.find(v => v.voterId === p.id) ? '❌' : '')}
+                  ${p.id === impostorId ? '<div class="shock-overlay"></div>' : ''}
                 </div>
               `).join('')}
             </div>
 
-            <div class="brutal-border-sm ${impostorCaught ? 'bg-green-200' : 'bg-red-200'} p-4 text-center mb-4">
+            <div class="brutal-border-sm p-4 text-center mb-4" style="background:${impostorCaught ? '#00e5a0' : '#ff6b6b'};color:#000">
               <p class="text-xl font-black">
                 ${impostorCaught
-                  ? `🕵️ ${impostor?.name || 'המתחזה'} נתפס! (${votesForImpostor}/${totalVoters} הצביעו נכון)`
+                  ? `⚡ ${impostor?.name || 'המתחזה'} נתפס! (${votesForImpostor}/${totalVoters} הצביעו נכון)`
                   : `🏃 ${impostor?.name || 'המתחזה'} הצליח לברוח! (רק ${votesForImpostor}/${totalVoters} זיהו אותו)`}
               </p>
             </div>
@@ -1417,13 +1707,13 @@
 
           ${state.isHost ? `
             <div class="text-center">
-              <button id="btn-next-reveal" class="brutal-btn bg-blue-400 px-8 py-3 text-xl font-bold">
+              <button id="btn-next-reveal" class="brutal-btn-mint px-8 py-3 text-xl font-bold">
                 ${state.revealStep < rooms.length - 1 ? 'הבא →' : '🏆 לוח הניקוד'}
               </button>
             </div>
           ` : `
             <div class="text-center">
-              <div class="brutal-border-sm bg-yellow-100 p-4 font-bold">ממתין שהמארח יעבור לשלב הבא...</div>
+              <div class="brutal-border-sm p-4 font-bold" style="color:#8b7aaa">ממתין שהמארח יעבור לשלב הבא...</div>
             </div>
           `}
         </div>
@@ -1465,26 +1755,26 @@
       container.innerHTML = `
         <div class="max-w-2xl mx-auto reveal-overlay">
           <div class="text-center mb-8">
-            <h1 class="text-5xl font-black mb-2">🏆 לוח הניקוד</h1>
-            <p class="text-lg font-bold">כאוס גרפי - תוצאות סופיות</p>
+            <h1 class="text-5xl font-black mb-2 text-white">🏆 לוח הניקוד</h1>
+            <p class="text-lg font-bold" style="color:#00e5a0">כאוס גרפי - תוצאות סופיות</p>
           </div>
 
-          <div class="brutal-border bg-white p-6">
+          <div class="brutal-border p-6">
             ${players.map((p, i) => `
-              <div class="flex items-center gap-3 ${i > 0 ? 'border-t-4 border-dashed border-black' : ''} py-3 stagger-in" style="animation-delay:${i*0.1}s">
+              <div class="flex items-center gap-3 py-3 stagger-in" style="animation-delay:${i*0.1}s;${i > 0 ? 'border-top:3px dashed #00e5a0' : ''}">
                 <div class="text-2xl font-black w-10 text-center">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</div>
                 <div class="player-avatar" style="width:44px;height:44px;font-size:22px">${p.avatar}</div>
                 <div class="flex-1">
-                  <div class="font-bold text-lg">${p.name} ${p.id === data.hostId ? '(מארח)' : ''}</div>
-                  <div class="text-sm">${p.isImpostor ? '🕵️ היה מתחזה' : '🎨 היה צייר'} | חדר ${(p.roomIndex ?? 0)+1}</div>
+                  <div class="font-bold text-lg text-white">${p.name} ${p.id === data.hostId ? '(מארח)' : ''}</div>
+                  <div class="text-sm hint-text">${p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'} | חדר ${(p.roomIndex ?? 0)+1}</div>
                 </div>
-                <div class="text-3xl font-black" style="color:${p.score === maxScore && p.score > 0 ? '#FFD700' : '#000'}">${p.score}</div>
+                <div class="text-3xl font-black" style="color:${p.score === maxScore && p.score > 0 ? '#00e5a0' : '#8b5cf6'}">${p.score}</div>
               </div>
             `).join('')}
           </div>
 
           <div class="mt-6 text-center">
-            <button id="btn-new-game" class="brutal-btn bg-pink-400 px-8 py-4 text-xl font-bold">🎮 משחק חדש</button>
+            <button id="btn-new-game" class="brutal-btn-mint px-8 py-4 text-xl font-bold">🎮 משחק חדש</button>
           </div>
         </div>
       `;
