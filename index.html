@@ -643,6 +643,33 @@
       return e.avatar || (e.veg && e.emotion ? e.veg + e.emotion : '🥕😊');
     }
 
+    function emojiHex(e) {
+      return [...e][0].codePointAt(0).toString(16);
+    }
+
+    function ekUrl(veg, emotion, version) {
+      return 'https://www.gstatic.com/android/keyboard/emojikitchen/' + (version || '20210831') + '/u' + emojiHex(veg) + '/u' + emojiHex(veg) + '_u' + emojiHex(emotion) + '.png';
+    }
+
+    function renderAvatar(p, size) {
+      const sz = size || 48;
+      const veg = p.veg || p.avatar?.[0] || '🥕';
+      const emo = p.emotion || p.avatar?.[1] || '😊';
+      const url = ekUrl(veg, emo);
+      const fs = Math.round(sz * 0.45);
+      return '<span class="avatar-el" style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px;position:relative">' +
+        '<img src="' + url + '" onerror="this.style.display=\'none\'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0">' +
+        '<span style="position:absolute">' + veg + emo + '</span>' +
+        '</span>';
+    }
+
+    function updateAvatarPreviews(root) {
+      root.querySelectorAll('.avatar-el').forEach(el => {
+        const img = el.querySelector('img');
+        if (img && img.complete && img.naturalWidth === 0) img.style.display = 'none';
+      });
+    }
+
     function toast(msg, isError) {
       const el = document.createElement('div');
       el.className = 'toast' + (isError ? ' error' : '');
@@ -1200,7 +1227,10 @@
               <div>
                 <label class="section-title block mb-2">🍳 מטבח האמוג'י — בנה את הדמות שלך</label>
                 <div class="flex items-center gap-4 mb-3">
-                  <div class="avatar-preview" id="avatar-preview">${VEGETABLES[selectedVegIdx]}${EMOTIONS[selectedEmoIdx]}</div>
+                  <div class="avatar-preview" id="avatar-preview" style="position:relative;font-size:0">
+                    <img id="preview-img" src="${ekUrl(VEGETABLES[selectedVegIdx], EMOTIONS[selectedEmoIdx])}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0">
+                    <span id="preview-fallback" style="font-size:40px;line-height:80px">${VEGETABLES[selectedVegIdx]}${EMOTIONS[selectedEmoIdx]}</span>
+                  </div>
                   <div class="flex-1 text-sm hint-text">
                     בחר ירק + רגש, כולם יראו את הדמות שלך!
                   </div>
@@ -1238,8 +1268,15 @@
 
       // Avatar builder listeners
       const updatePreview = () => {
-        const preview = $('#avatar-preview');
-        if (preview) preview.textContent = VEGETABLES[state._selVeg ?? 0] + EMOTIONS[state._selEmo ?? 0];
+        const veg = VEGETABLES[state._selVeg ?? 0];
+        const emo = EMOTIONS[state._selEmo ?? 0];
+        const img = $('#preview-img');
+        const fallback = $('#preview-fallback');
+        if (img) {
+          img.style.display = '';
+          img.src = ekUrl(veg, emo);
+        }
+        if (fallback) fallback.textContent = veg + emo;
       };
 
       $$('#veg-selector .avatar-option').forEach(btn => {
@@ -1326,7 +1363,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 stagger-in">
               ${players.map(p => `
                 <div class="player-card">
-                  <div class="player-avatar">${p.avatar}</div>
+                  <div class="player-avatar">${renderAvatar(p)}</div>
                   <span class="font-bold text-sm truncate">${p.name}</span>
                   ${p.id === data.hostId ? '<span class="host-badge mr-auto">מארח</span>' : ''}
                 </div>
@@ -1399,7 +1436,7 @@
           <div class="flex flex-wrap gap-1 mb-2">
             ${roomPlayers.map(p => `
               <div class="flex items-center gap-1 border-2 border-black px-2 py-0.5 text-xs font-bold" style="background:#2a1452;color:#fff">
-                <span>${p.avatar}</span>
+                ${renderAvatar(p, 24)}
                 <span>${p.name}</span>
               </div>
             `).join('')}
@@ -1558,7 +1595,7 @@
                     <div class="flex flex-wrap gap-1 mt-2">
                       ${roomPlayers.map(p => `
                         <div class="flex items-center gap-1 border-2 border-black px-2 py-1 text-xs font-bold" style="background:#2a1452;color:#fff">
-                          <span>${p.avatar}</span>
+                          ${renderAvatar(p, 28)}
                           <span>${p.name}</span>
                           ${p.id === data.hostId ? '<span class="host-badge" style="font-size:9px">מארח</span>' : ''}
                         </div>
@@ -1582,7 +1619,7 @@
                     if (!p) return '';
                     return `
                       <button class="vote-player-btn brutal-btn-mint px-4 py-3 flex items-center gap-2" data-target="${pid}">
-                        <span class="text-2xl">${p.avatar}</span>
+                        ${renderAvatar(p, 36)}
                         <span class="font-bold">${p.name}</span>
                       </button>
                     `;
@@ -1682,7 +1719,7 @@
             <div class="flex flex-wrap gap-2 mb-4 justify-center">
               ${roomPlayers.map(p => `
                 <div class="player-card ${p.id === impostorId ? 'shock' : ''}" style="${p.id === impostorId ? 'border-color:#ff6b6b;background:#2a1452;position:relative' : ''}">
-                  <div class="player-avatar" style="width:40px;height:40px;font-size:20px">${p.avatar}</div>
+                  <div class="player-avatar" style="width:40px;height:40px">${renderAvatar(p, 40)}</div>
                   <span class="font-bold">${p.name}</span>
                   ${p.id === impostorId ? '<span class="impostor-badge">⚡ מִתְחַזֶה ⚡</span>' : ''}
                   ${(votes.find(v => v.voterId === p.id)?.targetId) ? `
@@ -1763,7 +1800,7 @@
             ${players.map((p, i) => `
               <div class="flex items-center gap-3 py-3 stagger-in" style="animation-delay:${i*0.1}s;${i > 0 ? 'border-top:3px dashed #00e5a0' : ''}">
                 <div class="text-2xl font-black w-10 text-center">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</div>
-                <div class="player-avatar" style="width:44px;height:44px;font-size:22px">${p.avatar}</div>
+                <div class="player-avatar" style="width:44px;height:44px">${renderAvatar(p, 44)}</div>
                 <div class="flex-1">
                   <div class="font-bold text-lg text-white">${p.name} ${p.id === data.hostId ? '(מארח)' : ''}</div>
                   <div class="text-sm hint-text">${p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'} | חדר ${(p.roomIndex ?? 0)+1}</div>
