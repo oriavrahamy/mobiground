@@ -30,94 +30,140 @@
       color: #fff;
     }
 
+    .glass {
+      background: rgba(28, 10, 62, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
     .brutal-border {
-      border: 4px solid #00e5a0;
-      box-shadow: 6px 6px 0px #00e5a0;
-      background: #1c0a3e;
+      border: 3px solid rgba(0, 229, 160, 0.6);
+      box-shadow: 0 8px 32px rgba(0, 229, 160, 0.12), 4px 4px 0 rgba(0, 229, 160, 0.25);
+      background: rgba(28, 10, 62, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brutal-border::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 50%;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     .brutal-border-sm {
-      border: 3px solid #00e5a0;
-      box-shadow: 4px 4px 0px #00e5a0;
-      background: #1c0a3e;
+      border: 3px solid rgba(0, 229, 160, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 229, 160, 0.08), 3px 3px 0 rgba(0, 229, 160, 0.2);
+      background: rgba(28, 10, 62, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
     }
 
-    .brutal-btn {
-      border: 3px solid #000;
-      box-shadow: 4px 4px 0px #000;
-      transition: all 0.05s ease;
-      cursor: pointer;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #000;
-    }
-
-    .brutal-btn:active {
-      transform: translate(3px, 3px);
-      box-shadow: 1px 1px 0px #000;
-    }
-
-    .brutal-btn:disabled {
-      opacity: 0.5;
-      transform: none;
-      box-shadow: 4px 4px 0px #000;
-      cursor: not-allowed;
+    .brutal-border-sm::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 50%;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     .brutal-btn-mint {
-      background: #00e5a0;
-      border: 3px solid #000;
-      box-shadow: 4px 4px 0px #000;
-      transition: all 0.05s ease;
+      background: rgba(0, 229, 160, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 3px solid rgba(0, 229, 160, 0.9);
+      box-shadow: 0 4px 16px rgba(0, 229, 160, 0.2), 3px 3px 0 rgba(0, 0, 0, 0.8);
+      transition: all 0.1s ease;
       cursor: pointer;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brutal-btn-mint::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 50%;
+      bottom: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     .brutal-btn-mint:active {
-      transform: translate(3px, 3px);
-      box-shadow: 1px 1px 0px #000;
+      transform: translate(2px, 2px);
+      box-shadow: 0 2px 8px rgba(0, 229, 160, 0.15), 1px 1px 0 rgba(0, 0, 0, 0.8);
     }
 
     .brutal-btn-mint:disabled {
       opacity: 0.5;
       transform: none;
-      box-shadow: 4px 4px 0px #000;
+      box-shadow: 0 4px 16px rgba(0, 229, 160, 0.1), 3px 3px 0 rgba(0, 0, 0, 0.8);
       cursor: not-allowed;
     }
 
     .brutal-btn-purple {
-      background: #8b5cf6;
-      border: 3px solid #000;
-      box-shadow: 4px 4px 0px #000;
-      transition: all 0.05s ease;
+      background: rgba(139, 92, 246, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 3px solid rgba(139, 92, 246, 0.9);
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2), 3px 3px 0 rgba(0, 0, 0, 0.8);
+      transition: all 0.1s ease;
       cursor: pointer;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brutal-btn-purple::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 50%;
+      bottom: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     .brutal-btn-purple:active {
-      transform: translate(3px, 3px);
-      box-shadow: 1px 1px 0px #000;
+      transform: translate(2px, 2px);
+      box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15), 1px 1px 0 rgba(0, 0, 0, 0.8);
     }
 
     .brutal-input {
-      border: 3px solid #00e5a0;
-      box-shadow: 4px 4px 0px #00e5a0;
+      border: 3px solid rgba(0, 229, 160, 0.5);
+      box-shadow: 0 4px 16px rgba(0, 229, 160, 0.08), 3px 3px 0 rgba(0, 229, 160, 0.15);
       outline: none;
-      transition: all 0.1s;
-      background: #2a1452;
+      transition: all 0.2s;
+      background: rgba(42, 20, 82, 0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       color: #fff;
     }
 
     .brutal-input:focus {
-      box-shadow: 2px 2px 0px #00e5a0;
+      box-shadow: 0 4px 20px rgba(0, 229, 160, 0.15), 1px 1px 0 rgba(0, 229, 160, 0.3);
       transform: translate(2px, 2px);
+      border-color: rgba(0, 229, 160, 0.8);
     }
 
     .brutal-input::placeholder {
@@ -125,10 +171,11 @@
     }
 
     .canvas-wrapper {
-      border: 4px solid #00e5a0;
-      box-shadow: 6px 6px 0px #00e5a0;
+      border: 3px solid rgba(0, 229, 160, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 229, 160, 0.08), 4px 4px 0 rgba(0, 229, 160, 0.2);
       background: #fff;
       touch-action: none;
+      border-radius: 2px;
     }
 
     .color-btn {
@@ -169,38 +216,59 @@
       align-items: center;
       justify-content: center;
       font-size: 26px;
-      border: 3px solid #00e5a0;
-      background: #2a1452;
+      border: 3px solid rgba(0, 229, 160, 0.5);
+      background: rgba(42, 20, 82, 0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
 
     .player-card {
-      border: 3px solid #00e5a0;
-      background: #2a1452;
-      box-shadow: 4px 4px 0px #00e5a0;
+      border: 3px solid rgba(0, 229, 160, 0.5);
+      background: rgba(42, 20, 82, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 229, 160, 0.08), 3px 3px 0 rgba(0, 229, 160, 0.2);
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 8px 12px;
       color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .player-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 50%;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     .timer-ring {
       width: 60px;
       height: 60px;
-      border: 4px solid #00e5a0;
+      border: 4px solid rgba(0, 229, 160, 0.6);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 24px;
       font-weight: 900;
-      background: #1c0a3e;
+      background: rgba(28, 10, 62, 0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       color: #00e5a0;
+      box-shadow: 0 0 24px rgba(0, 229, 160, 0.08);
     }
 
     .timer-ring.urgent {
-      border-color: #ff6b6b;
+      border-color: rgba(255, 107, 107, 0.8);
       color: #ff6b6b;
+      box-shadow: 0 0 24px rgba(255, 107, 107, 0.15);
       animation: pulse 0.5s infinite;
     }
 
@@ -227,14 +295,14 @@
     }
 
     .exhibition-drawing {
-      border: 4px solid #00e5a0;
-      box-shadow: 6px 6px 0px #00e5a0;
+      border: 3px solid rgba(0, 229, 160, 0.5);
+      box-shadow: 0 4px 20px rgba(0, 229, 160, 0.08), 3px 3px 0 rgba(0, 229, 160, 0.2);
       background: #fff;
       overflow: hidden;
     }
 
     .exhibition-drawing .header {
-      background: #00e5a0;
+      background: linear-gradient(135deg, rgba(0, 229, 160, 0.9), rgba(0, 200, 138, 0.9));
       color: #000;
       font-weight: 900;
       text-align: center;
@@ -356,25 +424,39 @@
     }
 
     .word-display {
-      border: 4px solid #00e5a0;
+      border: 3px solid #00e5a0;
       padding: 12px 24px;
       font-size: 28px;
       font-weight: 900;
-      background: #00e5a0;
+      background: linear-gradient(135deg, #00e5a0, #00c88a);
       color: #000;
       display: inline-block;
-      box-shadow: 4px 4px 0px #000;
+      box-shadow: 0 4px 20px rgba(0, 229, 160, 0.2), 3px 3px 0 rgba(0, 0, 0, 0.8);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .word-display::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 50%;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 60%);
+      pointer-events: none;
     }
 
     .word-display.impostor {
-      background: #ff6b6b;
-      border-color: #000;
-      color: #fff;
+      background: linear-gradient(135deg, #ff6b6b, #e04848);
+      border-color: #ff6b6b;
     }
 
     .room-label {
-      border: 3px solid #000;
-      background: #8b5cf6;
+      border: 3px solid rgba(139, 92, 246, 0.6);
+      background: rgba(139, 92, 246, 0.25);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       color: #fff;
       font-weight: 900;
       font-size: 14px;
@@ -450,13 +532,16 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 9999;
-      border: 3px solid #000;
+      border: 3px solid rgba(0, 229, 160, 0.6);
       padding: 12px 24px;
       font-weight: 700;
       font-size: 16px;
       animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.5s forwards;
-      background: #00e5a0;
+      background: rgba(0, 229, 160, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       color: #000;
+      box-shadow: 0 4px 24px rgba(0, 229, 160, 0.2);
     }
 
     .toast.error {
@@ -475,16 +560,17 @@
     }
 
     .upload-zone {
-      border: 3px dashed #00e5a0;
+      border: 3px dashed rgba(0, 229, 160, 0.5);
       padding: 20px;
       text-align: center;
       cursor: pointer;
-      background: #2a1452;
+      background: rgba(42, 20, 82, 0.5);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       transition: all 0.2s;
     }
-
     .upload-zone:hover {
-      background: #3b1f6e;
+      background: rgba(59, 31, 110, 0.6);
     }
 
     .hint-text {
@@ -511,6 +597,39 @@
     ::-webkit-scrollbar-thumb {
       background: #00e5a0;
       border: 2px solid #000;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .shimmer {
+      background: linear-gradient(90deg, rgba(0,229,160,0) 0%, rgba(0,229,160,0.1) 50%, rgba(0,229,160,0) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    .btn-loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .btn-loading::after {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -647,8 +766,8 @@
       return [...e][0].codePointAt(0).toString(16);
     }
 
-    function ekUrl(veg, emotion, version) {
-      return 'https://www.gstatic.com/android/keyboard/emojikitchen/' + (version || '20210831') + '/u' + emojiHex(veg) + '/u' + emojiHex(veg) + '_u' + emojiHex(emotion) + '.png';
+    function ekUrl(veg, emotion) {
+      return 'https://emojik.vercel.app/s/' + encodeURIComponent(veg) + '_' + encodeURIComponent(emotion) + '?size=128';
     }
 
     function renderAvatar(p, size) {
@@ -657,16 +776,19 @@
       const emo = p.emotion || p.avatar?.[1] || '😊';
       const url = ekUrl(veg, emo);
       const fs = Math.round(sz * 0.45);
-      return '<span class="avatar-el" style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px;position:relative">' +
-        '<img src="' + url + '" onerror="this.style.display=\'none\'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0">' +
-        '<span style="position:absolute">' + veg + emo + '</span>' +
+      return '<span class="avatar-el" style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;font-size:' + fs + 'px;position:relative;overflow:hidden;border-radius:4px">' +
+        '<img src="' + url + '" onerror="this.style.display=\'none\'" onload="this.style.opacity=\'1\';var s=this.parentElement.querySelector(\'.af\');if(s)s.style.opacity=\'0\'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">' +
+        '<span class="af" style="transition:opacity 0.3s">' + veg + emo + '</span>' +
         '</span>';
     }
 
     function updateAvatarPreviews(root) {
       root.querySelectorAll('.avatar-el').forEach(el => {
         const img = el.querySelector('img');
-        if (img && img.complete && img.naturalWidth === 0) img.style.display = 'none';
+        if (img && img.complete) {
+          if (img.naturalWidth === 0) { img.style.display = 'none'; }
+          else { img.style.opacity = '1'; const s = el.querySelector('.af'); if (s) s.style.opacity = '0'; }
+        }
       });
     }
 
@@ -1227,9 +1349,9 @@
               <div>
                 <label class="section-title block mb-2">🍳 מטבח האמוג'י — בנה את הדמות שלך</label>
                 <div class="flex items-center gap-4 mb-3">
-                  <div class="avatar-preview" id="avatar-preview" style="position:relative;font-size:0">
-                    <img id="preview-img" src="${ekUrl(VEGETABLES[selectedVegIdx], EMOTIONS[selectedEmoIdx])}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0">
-                    <span id="preview-fallback" style="font-size:40px;line-height:80px">${VEGETABLES[selectedVegIdx]}${EMOTIONS[selectedEmoIdx]}</span>
+                  <div class="avatar-preview" id="avatar-preview" style="position:relative;font-size:0;overflow:hidden;border-radius:6px">
+                    <img id="preview-img" src="${ekUrl(VEGETABLES[selectedVegIdx], EMOTIONS[selectedEmoIdx])}" onerror="this.style.display='none'" onload="this.style.opacity='1';var s=this.parentElement.querySelector('.af');if(s)s.style.opacity='0'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">
+                    <span class="af" id="preview-fallback" style="font-size:40px;line-height:80px;transition:opacity 0.3s">${VEGETABLES[selectedVegIdx]}${EMOTIONS[selectedEmoIdx]}</span>
                   </div>
                   <div class="flex-1 text-sm hint-text">
                     בחר ירק + רגש, כולם יראו את הדמות שלך!
@@ -1274,9 +1396,13 @@
         const fallback = $('#preview-fallback');
         if (img) {
           img.style.display = '';
+          img.style.opacity = '0';
           img.src = ekUrl(veg, emo);
         }
-        if (fallback) fallback.textContent = veg + emo;
+        if (fallback) {
+          fallback.style.opacity = '1';
+          fallback.textContent = veg + emo;
+        }
       };
 
       $$('#veg-selector .avatar-option').forEach(btn => {
@@ -1304,12 +1430,14 @@
       $('#btn-create').addEventListener('click', async () => {
         const name = $('#join-name').value.trim();
         if (!name) { showError('נא להזין שם'); return; }
+        const btn = $('#btn-create');
+        btn.disabled = true; btn.classList.add('btn-loading');
         try {
           const veg = VEGETABLES[state._selVeg ?? 0];
           const emo = EMOTIONS[state._selEmo ?? 0];
           await createGame(name, veg, emo);
           state.playerName = name;
-        } catch (e) { showError(e.message); }
+        } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
       });
 
       $('#btn-join').addEventListener('click', async () => {
@@ -1317,12 +1445,14 @@
         const code = $('#join-code').value.trim().toUpperCase();
         if (!name) { showError('נא להזין שם'); return; }
         if (!code || code.length !== 4) { showError('נא להזין קוד חדר תקין (4 אותיות)'); return; }
+        const btn = $('#btn-join');
+        btn.disabled = true; btn.classList.add('btn-loading');
         try {
           const veg = VEGETABLES[state._selVeg ?? 0];
           const emo = EMOTIONS[state._selEmo ?? 0];
           await joinGame(code, name, veg, emo);
           state.playerName = name;
-        } catch (e) { showError(e.message); }
+        } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
       });
 
       $('#join-code').addEventListener('keydown', e => {
