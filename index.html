@@ -857,6 +857,7 @@
     const SOUND = {
       click() { _playTone(660, 0.06, 'square', 0.1); },
       poof() { _playNoise(0.12, 0.2); },
+      sparkle() { _playTone(880, 0.08, 'sine', 0.15); setTimeout(() => _playTone(1100, 0.08, 'sine', 0.15), 60); setTimeout(() => _playTone(1320, 0.12, 'sine', 0.12), 120); },
       join() { _playTone(520, 0.12, 'sine', 0.15); setTimeout(() => _playTone(680, 0.12, 'sine', 0.15), 100); },
       start() { _playTone(440, 0.15, 'sine', 0.2); setTimeout(() => _playTone(580, 0.15, 'sine', 0.2), 130); setTimeout(() => _playTone(720, 0.25, 'sine', 0.2), 260); },
       tick() { _playTone(800, 0.03, 'square', 0.05); },
@@ -1557,8 +1558,8 @@
 
     // ---- JOIN SCREEN ----
     function renderJoin(container) {
-      const selectedVegIdx = state._selVeg ?? 0;
-      const selectedEmoIdx = state._selEmo ?? 0;
+      const flow = state._joinFlow || 'code';
+      const code = state._verifiedCode || '';
 
       container.innerHTML = `
         <div class="min-h-screen flex items-center justify-center p-4">
@@ -1568,22 +1569,41 @@
               <p class="text-lg font-bold" style="color:#00e5a0">משחק הציור ההמוני</p>
             </div>
 
-            <div class="glass-card p-6 space-y-4">
-              <div>
-                <label class="section-title block mb-1">השם שלך</label>
-                <input id="join-name" class="inp w-full p-3 text-lg font-bold" placeholder="אורי" maxlength="12" value="${state.playerName || ''}">
-              </div>
-
-              <div>
-                <label class="section-title block mb-1">קוד חדר</label>
-                <div class="flex gap-2">
-                  <input id="join-code" class="inp flex-1 p-3 text-lg font-bold text-center tracking-widest uppercase" placeholder="ABCD" maxlength="4" style="letter-spacing:4px">
-                  <button id="btn-join" class="btn-purple px-6 py-3 text-lg font-bold">הצטרף</button>
+            <div class="glass-card p-6 space-y-4" id="join-card">
+              ${flow === 'code' ? `
+                <div>
+                  <label class="section-title block mb-1">קוד חדר</label>
+                  <div class="flex gap-2">
+                    <input id="join-code" class="inp flex-1 p-3 text-lg font-bold text-center tracking-widest uppercase" placeholder="ABCD" maxlength="4" style="letter-spacing:4px">
+                    <button id="btn-verify" class="btn-purple px-6 py-3 text-lg font-bold">הצטרף</button>
+                  </div>
                 </div>
-              </div>
-
-              <div class="border-t border-dashed" style="border-color:rgba(0,229,160,0.2)"></div>
-              <button id="btn-create" class="btn-mint w-full py-4 text-xl font-bold">צור משחק חדש</button>
+                <div class="text-center pt-2">
+                  <span id="btn-show-create" style="cursor:pointer;color:rgba(255,255,255,0.35);font-size:13px;font-weight:400;text-decoration:underline;text-underline-offset:3px">צור משחק חדש</span>
+                </div>
+              ` : flow === 'verify' ? `
+                <div class="text-center mb-2">
+                  <span class="section-title">קוד חדר</span>
+                  <div class="text-2xl font-black tracking-widest mt-1" style="color:#00e5a0">${code}</div>
+                </div>
+                <div>
+                  <label class="section-title block mb-1">הכינוי שלך</label>
+                  <input id="join-name" class="inp w-full p-3 text-lg font-bold" placeholder="אורי" maxlength="12" value="${state.playerName || ''}">
+                </div>
+                <button id="btn-enter" class="btn-mint w-full py-3 text-lg font-bold">כניסה לחדר</button>
+                <div class="text-center">
+                  <span id="btn-back" style="cursor:pointer;color:rgba(255,255,255,0.35);font-size:13px;font-weight:400">← חזור</span>
+                </div>
+              ` : `
+                <div>
+                  <label class="section-title block mb-1">הכינוי שלך</label>
+                  <input id="join-name" class="inp w-full p-3 text-lg font-bold" placeholder="אורי" maxlength="12" value="${state.playerName || ''}">
+                </div>
+                <button id="btn-create-submit" class="btn-mint w-full py-3 text-lg font-bold">צור משחק חדש</button>
+                <div class="text-center">
+                  <span id="btn-back" style="cursor:pointer;color:rgba(255,255,255,0.35);font-size:13px;font-weight:400">← חזור</span>
+                </div>
+              `}
             </div>
 
             <div id="join-error" class="glass-card-flat p-3 font-bold hidden" style="background:rgba(255,107,107,0.2);border-color:rgba(255,107,107,0.3);color:#ff6b6b"></div>
@@ -1591,42 +1611,87 @@
         </div>
       `;
 
-      $('#join-name').addEventListener('input', () => {
-        state.playerName = $('#join-name').value;
-      });
+      if (flow === 'code') {
+        const verifyBtn = $('#btn-verify');
+        const codeInput = $('#join-code');
 
-      $('#btn-create').addEventListener('click', async () => {
-        SOUND.join();
-        const name = $('#join-name').value.trim();
-        if (!name) { showError('נא להזין שם'); return; }
-        const btn = $('#btn-create');
-        btn.disabled = true; btn.classList.add('btn-loading');
-        try {
-          await createGame(name, '🥕', '😊');
-          state.playerName = name;
-        } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
-      });
+        codeInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') verifyBtn.click();
+        });
 
-      $('#btn-join').addEventListener('click', async () => {
-        SOUND.join();
-        const name = $('#join-name').value.trim();
-        const code = $('#join-code').value.trim().toUpperCase();
-        if (!name) { showError('נא להזין שם'); return; }
-        if (!code || code.length !== 4) { showError('נא להזין קוד חדר תקין (4 אותיות)'); return; }
-        const btn = $('#btn-join');
-        btn.disabled = true; btn.classList.add('btn-loading');
-        try {
-          await joinGame(code, name, '🥕', '😊');
-          state.playerName = name;
-        } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
-      });
+        verifyBtn.addEventListener('click', async () => {
+          const code = codeInput.value.trim().toUpperCase();
+          if (!code || code.length !== 4) { showError('נא להזין קוד חדר תקין (4 אותיות)'); return; }
+          verifyBtn.disabled = true; verifyBtn.classList.add('btn-loading');
+          try {
+            await ensureAuth();
+            const doc = await db.collection('games').doc(code).get();
+            if (!doc.exists) { showError('החדר לא נמצא'); verifyBtn.disabled = false; verifyBtn.classList.remove('btn-loading'); return; }
+            const data = doc.data();
+            if (data.phase !== 'lobby') { showError('המשחק כבר התחיל'); verifyBtn.disabled = false; verifyBtn.classList.remove('btn-loading'); return; }
+            state._verifiedCode = code;
+            state._joinFlow = 'verify';
+            render();
+          } catch (e) { showError(e.message); verifyBtn.disabled = false; verifyBtn.classList.remove('btn-loading'); }
+        });
 
-      $('#join-code').addEventListener('keydown', e => {
-        if (e.key === 'Enter') $('#btn-join').click();
-      });
-      $('#join-name').addEventListener('keydown', e => {
-        if (e.key === 'Enter') $('#btn-create').click();
-      });
+        $('#btn-show-create').addEventListener('click', () => {
+          state._joinFlow = 'create';
+          render();
+        });
+      }
+
+      if (flow === 'verify') {
+        $('#join-name').addEventListener('input', () => {
+          state.playerName = $('#join-name').value;
+        });
+
+        $('#btn-enter').addEventListener('click', async () => {
+          const name = $('#join-name').value.trim();
+          if (!name) { showError('נא להזין כינוי'); return; }
+          const btn = $('#btn-enter');
+          btn.disabled = true; btn.classList.add('btn-loading');
+          try {
+            await joinGame(state._verifiedCode, name, '🥕', '😊');
+            state.playerName = name;
+          } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
+        });
+
+        $('#btn-back').addEventListener('click', () => {
+          state._joinFlow = 'code';
+          render();
+        });
+
+        $('#join-name').addEventListener('keydown', e => {
+          if (e.key === 'Enter') $('#btn-enter').click();
+        });
+      }
+
+      if (flow === 'create') {
+        $('#join-name').addEventListener('input', () => {
+          state.playerName = $('#join-name').value;
+        });
+
+        $('#btn-create-submit').addEventListener('click', async () => {
+          const name = $('#join-name').value.trim();
+          if (!name) { showError('נא להזין כינוי'); return; }
+          const btn = $('#btn-create-submit');
+          btn.disabled = true; btn.classList.add('btn-loading');
+          try {
+            await createGame(name, '🥕', '😊');
+            state.playerName = name;
+          } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
+        });
+
+        $('#btn-back').addEventListener('click', () => {
+          state._joinFlow = 'code';
+          render();
+        });
+
+        $('#join-name').addEventListener('keydown', e => {
+          if (e.key === 'Enter') $('#btn-create-submit').click();
+        });
+      }
     }
 
     function showError(msg) {
@@ -1648,74 +1713,118 @@
       const selEmoIdx = myEmoIdx >= 0 ? myEmoIdx : 0;
       const avatarOpen = state._avatarOpen;
 
-      container.innerHTML = `
-        <div class="max-w-3xl mx-auto">
-          <div class="text-center mb-6">
-            <h1 class="text-4xl font-black mb-2 text-white">🎨 כאוס גרפי</h1>
-            <div class="glass-card-flat inline-block px-6 py-2">
-              <span class="font-bold">קוד חדר:</span>
-              <span class="text-2xl font-black tracking-widest ml-2" style="color:#00e5a0">${state.gameId}</span>
+      const avatarBuilderHTML = `
+        <div class="glass-card p-4 mb-4">
+          <button id="btn-toggle-avatar" class="w-full flex items-center justify-between" style="cursor:pointer;background:none;border:none;color:inherit;padding:0">
+            <span class="font-bold text-white">🍳 מטבח האמוג'י — בנה את הדמות שלך</span>
+            <span id="avatar-arrow" style="transition:transform 0.2s;${avatarOpen ? 'transform:rotate(180deg)' : ''}">▼</span>
+          </button>
+          <div id="avatar-builder" class="mt-4" style="display:${avatarOpen ? '' : 'none'}">
+            <div class="flex items-center gap-4 mb-3">
+              <div class="avatar-preview" id="lobby-preview" style="position:relative;font-size:0;overflow:hidden;border-radius:12px">
+                <img id="lobby-preview-img" src="${ekUrl(VEGETABLES[selVegIdx], EMOTIONS[selEmoIdx])}" onerror="this.style.display='none'" onload="this.style.opacity='1';var s=this.parentElement.querySelector('.af');if(s)s.style.opacity='0'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">
+                <span class="af" style="font-size:40px;line-height:80px;transition:opacity 0.3s">${VEGETABLES[selVegIdx]}${EMOTIONS[selEmoIdx]}</span>
+              </div>
+              <div class="flex-1 text-sm hint-text">
+                בחר ירק + רגש, כולם יראו את הדמות החדשה שלך!
+              </div>
             </div>
-          </div>
-
-          <div class="glass-card p-6 mb-4">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
-              ${isHost ? `<button id="btn-start" class="btn-mint px-6 py-2 text-lg font-bold">התחל משחק!</button>` : `<div class="font-bold" style="color:#8b7aaa">ממתין שהמארח יתחיל...</div>`}
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 stagger-in">
-              ${players.map(p => `
-                <div class="player-card">
-                  <div class="player-avatar">${renderAvatar(p)}</div>
-                  <span class="font-bold text-sm truncate">${p.name}</span>
-                  ${p.id === data.hostId ? '<span class="host-badge mr-auto">מארח</span>' : ''}
-                </div>
+            <div class="section-title mb-1" style="font-size:11px">ירק</div>
+            <div class="flex flex-wrap gap-1 mb-2" id="lobby-veg-selector">
+              ${VEGETABLES.map((v, i) => `
+                <button class="avatar-option ${i === selVegIdx ? 'selected' : ''}" data-idx="${i}">${v}</button>
               `).join('')}
             </div>
-            <div class="mt-3 flex gap-2 flex-wrap">
-              <button id="btn-export-words" class="btn-purple px-3 py-1 text-sm font-bold">📥 ייצוא מילים</button>
-              <button id="btn-import-words" class="btn-purple px-3 py-1 text-sm font-bold">📤 יבוא מילים</button>
-              <input id="file-input" type="file" accept=".xlsx,.xls" style="display:none">
-              ${hasCustomWords ? `<span class="text-xs font-bold px-2 py-1" style="background:#00e5a0;color:#000">✅ מילים מותאמות</span>` : ''}
+            <div class="section-title mb-1" style="font-size:11px">רגש</div>
+            <div class="flex flex-wrap gap-1 mb-2" id="lobby-emo-selector">
+              ${EMOTIONS.map((e, i) => `
+                <button class="avatar-option ${i === selEmoIdx ? 'selected' : ''}" data-idx="${i}">${e}</button>
+              `).join('')}
             </div>
-          </div>
-
-          <div class="glass-card p-4 mb-4">
-            <button id="btn-toggle-avatar" class="w-full flex items-center justify-between" style="cursor:pointer;background:none;border:none;color:inherit;padding:0">
-              <span class="font-bold text-white">🍳 מטבח האמוג'י — בנה את הדמות שלך</span>
-              <span id="avatar-arrow" style="transition:transform 0.2s;${avatarOpen ? 'transform:rotate(180deg)' : ''}">▼</span>
-            </button>
-            <div id="avatar-builder" class="mt-4" style="display:${avatarOpen ? '' : 'none'}">
-              <div class="flex items-center gap-4 mb-3">
-                <div class="avatar-preview" id="lobby-preview" style="position:relative;font-size:0;overflow:hidden;border-radius:12px">
-                  <img id="lobby-preview-img" src="${ekUrl(VEGETABLES[selVegIdx], EMOTIONS[selEmoIdx])}" onerror="this.style.display='none'" onload="this.style.opacity='1';var s=this.parentElement.querySelector('.af');if(s)s.style.opacity='0'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">
-                  <span class="af" style="font-size:40px;line-height:80px;transition:opacity 0.3s">${VEGETABLES[selVegIdx]}${EMOTIONS[selEmoIdx]}</span>
-                </div>
-                <div class="flex-1 text-sm hint-text">
-                  בחר ירק + רגש, כולם יראו את הדמות החדשה שלך!
-                </div>
-              </div>
-              <div class="section-title mb-1" style="font-size:11px">ירק</div>
-              <div class="flex flex-wrap gap-1 mb-2" id="lobby-veg-selector">
-                ${VEGETABLES.map((v, i) => `
-                  <button class="avatar-option ${i === selVegIdx ? 'selected' : ''}" data-idx="${i}">${v}</button>
-                `).join('')}
-              </div>
-              <div class="section-title mb-1" style="font-size:11px">רגש</div>
-              <div class="flex flex-wrap gap-1 mb-2" id="lobby-emo-selector">
-                ${EMOTIONS.map((e, i) => `
-                  <button class="avatar-option ${i === selEmoIdx ? 'selected' : ''}" data-idx="${i}">${e}</button>
-                `).join('')}
-              </div>
-            </div>
-          </div>
-
-          <div class="glass-card-flat p-4 text-center">
-            <p class="font-bold" style="color:#00e5a0">📱 שתף את קוד החדר עם החברים!</p>
-            <p class="text-sm hint-text">כולם צריכים להזין את הקוד במכשיר שלהם</p>
           </div>
         </div>
       `;
+
+      if (isHost) {
+        container.innerHTML = `
+          <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-6">
+              <h1 class="text-4xl font-black mb-2 text-white">🎨 כאוס גרפי</h1>
+              <div class="glass-card-flat inline-block px-6 py-2">
+                <span class="font-bold">קוד חדר:</span>
+                <span class="text-2xl font-black tracking-widest ml-2" style="color:#00e5a0">${state.gameId}</span>
+              </div>
+            </div>
+
+            <div class="glass-card p-6 mb-4">
+              <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
+                <button id="btn-start" class="btn-mint px-6 py-2 text-lg font-bold">התחל משחק!</button>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 stagger-in">
+                ${players.map(p => `
+                  <div class="player-card">
+                    <div class="player-avatar">${renderAvatar(p)}</div>
+                    <span class="font-bold text-sm truncate">${p.name}</span>
+                    ${p.id === data.hostId ? '<span class="host-badge mr-auto">מארח</span>' : ''}
+                  </div>
+                `).join('')}
+              </div>
+              <div class="mt-3 flex gap-2 flex-wrap">
+                <button id="btn-export-words" class="btn-purple px-3 py-1 text-sm font-bold">📥 ייצוא מילים</button>
+                <button id="btn-import-words" class="btn-purple px-3 py-1 text-sm font-bold">📤 יבוא מילים</button>
+                <input id="file-input" type="file" accept=".xlsx,.xls" style="display:none">
+                ${hasCustomWords ? `<span class="text-xs font-bold px-2 py-1" style="background:#00e5a0;color:#000">✅ מילים מותאמות</span>` : ''}
+              </div>
+            </div>
+
+            ${avatarBuilderHTML}
+
+            <div class="glass-card-flat p-4 text-center">
+              <p class="font-bold" style="color:#00e5a0">📱 שתף את קוד החדר עם החברים!</p>
+              <p class="text-sm hint-text">כולם צריכים להזין את הקוד במכשיר שלהם</p>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="max-w-md mx-auto text-center">
+            <div class="glass-card p-6 mb-4">
+              <div class="section-title mb-2">הכינוי שלך</div>
+              <div class="text-3xl font-black text-white mb-1">${me?.name || '...'}</div>
+            </div>
+
+            <div class="glass-card p-4 mb-4">
+              <div class="flex items-center gap-4 justify-center mb-3">
+                <div class="avatar-preview" id="lobby-preview" style="position:relative;font-size:0;overflow:hidden;border-radius:16px;width:100px;height:100px">
+                  <img id="lobby-preview-img" src="${ekUrl(VEGETABLES[selVegIdx], EMOTIONS[selEmoIdx])}" onerror="this.style.display='none'" onload="this.style.opacity='1';var s=this.parentElement.querySelector('.af');if(s)s.style.opacity='0'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">
+                  <span class="af" style="font-size:50px;line-height:100px;transition:opacity 0.3s">${VEGETABLES[selVegIdx]}${EMOTIONS[selEmoIdx]}</span>
+                </div>
+              </div>
+              <button id="btn-toggle-avatar" class="w-full py-2 btn-purple text-sm font-bold">🍳 עיצוב דמות</button>
+              <div id="avatar-builder" class="mt-4" style="display:${avatarOpen ? '' : 'none'};text-align:initial">
+                <div class="section-title mb-1" style="font-size:11px">ירק</div>
+                <div class="flex flex-wrap gap-1 mb-2" id="lobby-veg-selector">
+                  ${VEGETABLES.map((v, i) => `
+                    <button class="avatar-option ${i === selVegIdx ? 'selected' : ''}" data-idx="${i}">${v}</button>
+                  `).join('')}
+                </div>
+                <div class="section-title mb-1" style="font-size:11px">רגש</div>
+                <div class="flex flex-wrap gap-1 mb-2" id="lobby-emo-selector">
+                  ${EMOTIONS.map((e, i) => `
+                    <button class="avatar-option ${i === selEmoIdx ? 'selected' : ''}" data-idx="${i}">${e}</button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card-flat p-4">
+              <div class="font-bold" style="color:#8b7aaa">ממתין שהמארח יתחיל...</div>
+              <div class="mt-2 text-xs hint-text">${players.length} שחקנים מחוברים</div>
+            </div>
+          </div>
+        `;
+      }
 
       updateAvatarPreviews(container);
 
@@ -1767,10 +1876,10 @@
         state._avatarOpen = b.style.display === 'none';
         if (state._avatarOpen) {
           b.style.display = '';
-          arrow.style.transform = 'rotate(180deg)';
+          if (arrow) arrow.style.transform = 'rotate(180deg)';
         } else {
           b.style.display = 'none';
-          arrow.style.transform = '';
+          if (arrow) arrow.style.transform = '';
         }
       });
 
@@ -1782,7 +1891,7 @@
           state._lobbyVeg = parseInt(btn.dataset.idx);
           $$('#lobby-veg-selector .avatar-option').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
-          SOUND.poof();
+          SOUND.sparkle();
           updateLobbyAvatar();
         });
       });
@@ -1792,27 +1901,19 @@
           state._lobbyEmo = parseInt(btn.dataset.idx);
           $$('#lobby-emo-selector .avatar-option').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
-          SOUND.poof();
+          SOUND.sparkle();
           updateLobbyAvatar();
         });
       });
 
       if (isHost) {
         $('#btn-start').addEventListener('click', () => { SOUND.start(); startGame(); });
+        $('#btn-export-words').addEventListener('click', exportWordTemplate);
+        $('#btn-import-words').addEventListener('click', () => { $('#file-input').click(); });
+        $('#file-input').addEventListener('change', e => {
+          if (e.target.files[0]) { importWordList(e.target.files[0]); e.target.value = ''; }
+        });
       }
-
-      $('#btn-export-words').addEventListener('click', exportWordTemplate);
-
-      $('#btn-import-words').addEventListener('click', () => {
-        $('#file-input').click();
-      });
-
-      $('#file-input').addEventListener('change', e => {
-        if (e.target.files[0]) {
-          importWordList(e.target.files[0]);
-          e.target.value = '';
-        }
-      });
     }
 
     // ---- DRAWING (COLLABORATIVE) ----
