@@ -597,6 +597,12 @@
       100% { opacity: 0; }
     }
 
+    @keyframes aliasPop {
+      0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+      60% { transform: scale(1.1) translateY(-5px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
     .toast {
       position: fixed;
       bottom: 20px;
@@ -1056,6 +1062,11 @@
         <div class="flex gap-2 flex-wrap" id="cfg-rounds-container"></div>
       </div>
 
+      <div class="mb-3" id="cfg-alias-score-container" style="display:none">
+        <label class="section-title block mb-1">יעד נקודות לניצחון</label>
+        <div class="flex gap-2 flex-wrap" id="cfg-alias-target-container"></div>
+      </div>
+
       <div class="mb-4">
         <label class="section-title block mb-1">מצב משחק</label>
         <div class="flex flex-col gap-2" id="cfg-modes-container"></div>
@@ -1224,9 +1235,14 @@
     const GAME_MODES = [
       { id: 'impostor', name: 'המתחזה', desc: 'מצא מי המתחזה בין הציירים', icon: '🕵️' },
       { id: 'collab', name: 'ציור משותף', desc: 'כולם מציירים ביחד, מצביעים על הכי טוב', icon: '🎨' },
+      { id: 'broken-phone', name: 'טלפון שבור', desc: 'כותבים ומציירים בשרשרת', icon: '📞' },
+      { id: 'alias', name: 'אליאס', desc: 'תסביר מילים בלי להגיד את המילים האסורות', icon: '🗣️' },
     ];
     const DEFAULT_GAME_MODE = 'impostor';
     const DEFAULT_MAX_ROUNDS = 3;
+    const ALIAS_TARGET_SCORE = 5;
+    const ALIAS_ROUND_DURATION = 60;
+    const WRITING_DURATION = 35;
     const PLAYER_COLORS = ['#e6194b','#3cb44b','#4363d8','#f58231','#911eb4','#42d4f4','#f032e6','#bfef45','#00e5a0','#800000','#9a6324'];
 
     function playerColor(pid, playerOrder) {
@@ -1256,6 +1272,39 @@
       { word: 'סירה', category: 'כלי תחבורה' },
     ];
 
+    const ALIAS_WORD_POOL = [
+      { word: 'פיצה', taboo: ['אוכל', 'מאפה', 'גבינה', 'סוג'] },
+      { word: 'מטוס', taboo: ['טיסה', 'שדה', 'תעופה', 'נוסעים'] },
+      { word: 'גיטרה', taboo: ['נגינה', 'מיתרים', 'כלי', 'מוזיקה'] },
+      { word: 'פיל', taboo: ['חיה', 'גדול', 'חדק', 'אפריקה'] },
+      { word: 'תמנון', taboo: ['ים', 'זרועות', 'יצור', 'שמונה'] },
+      { word: 'רובוט', taboo: ['מכונה', 'אוטומטי', 'מחשב', 'קופסה'] },
+      { word: 'טירה', taboo: ['מבנה', 'מלך', 'ימי', 'ביניים'] },
+      { word: 'ענן', taboo: ['שמיים', 'גשם', 'לבן', 'מטר'] },
+      { word: 'פרח', taboo: ['גינה', 'צבע', 'טבע', 'ורד'] },
+      { word: 'כלב', taboo: ['חיה', 'נביחה', 'בית', 'זנב'] },
+      { word: 'רקטה', taboo: ['חלל', 'שיגור', 'טיל', 'אסטרונאוט'] },
+      { word: 'דבורה', taboo: ['דבש', 'עקיצה', 'פרחים', 'מעופף'] },
+      { word: 'פסנתר', taboo: ['נגינה', 'קלידים', 'כלי', 'מוזיקה'] },
+      { word: 'כובע', taboo: ['ראש', 'לבוש', 'מגן', 'שמש'] },
+      { word: 'שמש', taboo: ['גוף', 'שמימי', 'אור', 'חום'] },
+      { word: 'ים', taboo: ['מים', 'גלים', 'חוף', 'מלח'] },
+      { word: 'ספר', taboo: ['קריאה', 'דפים', 'מילים', 'כריכה'] },
+      { word: 'עוגה', taboo: ['יום', 'הולדת', 'קינוח', 'נרות'] },
+      { word: 'מחשב', taboo: ['מסך', 'מקלדת', 'תוכנה', 'אינטרנט'] },
+      { word: 'כדור', taboo: ['משחק', 'עגול', 'זריקה', 'ספורט'] },
+      { word: 'טלפון', taboo: ['שיחה', 'נייד', 'צלצול', 'סלולרי'] },
+      { word: 'עץ', taboo: ['גבוה', 'עלים', 'גזע', 'טבע'] },
+      { word: 'קולנוע', taboo: ['סרט', 'מסך', 'פופקורן', 'צפייה'] },
+      { word: 'נחש', taboo: ['זוחל', 'ארס', 'לשון', 'שריקה'] },
+      { word: 'חתול', taboo: ['חיה', 'בית', 'פינוק', 'גרגור'] },
+      { word: 'דג', taboo: ['מים', 'שחייה', 'קשקשים', 'ים'] },
+      { word: 'קפה', taboo: ['משקה', 'קפאין', 'שתייה', 'בוקר'] },
+      { word: 'אופניים', taboo: ['דוושה', 'רכיבה', 'חישוקים', 'ספורט'] },
+      { word: 'כסף', taboo: ['שלם', 'מטבע', 'עושר', 'בנק'] },
+      { word: 'מתנה', taboo: ['יום', 'הולדת', 'עטיפה', 'הפתעה'] },
+    ];
+
     // ============================================================
     // STATE
     // ============================================================
@@ -1268,6 +1317,7 @@
       currentScreen: 'join',
       isHost: false,
       timerInterval: null,
+      _aliasAdvancing: false,
       // drawing state
       drawing: {
         canvas: null,
@@ -1580,6 +1630,8 @@
         else if (data.phase === 'lobby') render();
         else if (data.phase === 'drawing') {
           // Canvas updates via _drawWatch, no full re-render
+        } else if (data.phase === 'writing') {
+          // Writing phase - avoid re-render that would lose unsaved text
         } else {
           render();
         }
@@ -1616,6 +1668,7 @@
         if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
         if (window._drawWatch) { clearInterval(window._drawWatch); window._drawWatch = null; }
         lastPhase = data.phase;
+        state._aliasAdvancing = false;
         if (data.phase === 'drawing') {
           _startMusic();
         } else {
@@ -1644,6 +1697,69 @@
       const gameMode = data.gameMode || DEFAULT_GAME_MODE;
       const maxRounds = data.maxRounds || DEFAULT_MAX_ROUNDS;
       const isImpostorMode = gameMode === 'impostor';
+
+      if (gameMode === 'broken-phone') {
+        const playerOrder = data.playerOrder || Object.keys(data.players);
+        const N = playerOrder.length;
+        const chainEntries = {};
+        playerOrder.forEach((pid, idx) => {
+          chainEntries[`${idx}_0`] = { playerId: pid, type: 'text', text: '' };
+        });
+        const updateData = {
+          round: 0,
+          maxRounds: maxRounds,
+          strokes: [],
+          votes: {},
+          chainRound: 0,
+          chainEntries: chainEntries,
+          phase: 'writing',
+          startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          writingEndTime: Date.now() + WRITING_DURATION * 1000,
+          turnStartTime: Date.now(),
+        };
+        try {
+          await state.gameRef.update(updateData);
+          console.log('startGame: broken-phone update succeeded');
+        } catch (e) {
+          console.error('startGame failed:', e);
+          alert('שגיאה בהתחלת המשחק: ' + e.message);
+        }
+        return;
+      }
+
+      if (gameMode === 'alias') {
+        const playerOrder = data.playerOrder || Object.keys(data.players);
+        const wordEntry = pickAliasWord();
+        const aliasTarget = data.aliasTargetScore || ALIAS_TARGET_SCORE;
+        const updateData = {
+          round: 0,
+          maxRounds: maxRounds,
+          aliasExplainerIdx: 0,
+          aliasWord: wordEntry.word,
+          aliasTaboo: wordEntry.taboo,
+          aliasGuessed: false,
+          aliasGuesserId: null,
+          aliasGuessedAt: null,
+          aliasTargetScore: aliasTarget,
+          aliasEndTime: Date.now() + ALIAS_ROUND_DURATION * 1000,
+          aliasSkipUsed: {},
+          aliasUsedWords: [wordEntry.word],
+          chatMessages: [],
+          votes: {},
+          scoreRound: 0,
+          phase: 'explaining',
+          startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          turnStartTime: Date.now(),
+        };
+        try {
+          await state.gameRef.update(updateData);
+          console.log('startGame: alias update succeeded');
+        } catch (e) {
+          console.error('startGame failed:', e);
+          alert('שגיאה בהתחלת המשחק: ' + e.message);
+        }
+        return;
+      }
 
       const wordPool = window._customWords || WORD_POOL;
       const shuffled = shuffle(players);
@@ -1822,6 +1938,21 @@
 
     function saveStrokeRealtime(stroke) {
       if (!state.gameData) return;
+      const gameMode = state.gameData.gameMode || DEFAULT_GAME_MODE;
+      if (gameMode === 'broken-phone') {
+        const info = getMyChainInfo(state.gameData);
+        if (!info) return;
+        try {
+          state.gameRef.update({
+            [`chainEntries.${info.key}.strokes`]: firebase.firestore.FieldValue.arrayUnion(stroke),
+            [`chainEntries.${info.key}.playerId`]: state.user.uid,
+            [`chainEntries.${info.key}.type`]: 'drawing',
+          });
+        } catch (e) {
+          console.error('Save stroke error:', e);
+        }
+        return;
+      }
       try {
         state.gameRef.update({
           strokes: firebase.firestore.FieldValue.arrayUnion(stroke),
@@ -1829,6 +1960,61 @@
       } catch (e) {
         console.error('Save stroke error:', e);
       }
+    }
+
+    function saveTextRealtime(text) {
+      if (!state.gameData) return;
+      const info = getMyChainInfo(state.gameData);
+      if (!info) return;
+      try {
+        state.gameRef.update({
+          [`chainEntries.${info.key}.text`]: text,
+          [`chainEntries.${info.key}.playerId`]: state.user.uid,
+          [`chainEntries.${info.key}.type`]: 'text',
+        });
+      } catch (e) {
+        console.error('Save text error:', e);
+      }
+    }
+
+    // ============================================================
+    // ALIAS (ELIAS GAME) - CHAT & HELPERS
+    // ============================================================
+    function isCorrectGuess(message, word) {
+      if (!message || !word) return false;
+      let m = message.trim();
+      const w = word.trim();
+      if (m === w) return true;
+
+      m = m.replace(/(.)\1{2,}/g, '$1');
+      if (m === w) return true;
+
+      const prefixLetters = ['א', 'ה', 'ו', 'י', 'נ', 'ת', 'ל', 'ש', 'ב', 'כ', 'מ'];
+      for (const p of prefixLetters) {
+        if (m.startsWith(p) && m.slice(p.length) === w) return true;
+        if (w.startsWith(p) && w.slice(p.length) === m) return true;
+      }
+      return false;
+    }
+
+    function pickAliasWord(usedWords) {
+      const pool = window._aliasCustomWords || ALIAS_WORD_POOL;
+      const available = pool.filter(e => !usedWords?.includes(e.word));
+      if (available.length === 0) return pool[Math.floor(Math.random() * pool.length)];
+      return available[Math.floor(Math.random() * available.length)];
+    }
+
+    function saveChatMessage(text) {
+      if (!state.gameData || !state.user) return;
+      const msg = {
+        pid: state.user.uid,
+        text: text.trim(),
+        t: Date.now(),
+        id: Math.random().toString(36).substr(2, 9),
+      };
+      return state.gameRef.update({
+        chatMessages: firebase.firestore.FieldValue.arrayUnion(msg),
+      }).then(() => msg).catch(e => console.error('Chat error:', e));
     }
 
     function getCanvasPos(canvas, e) {
@@ -1983,6 +2169,81 @@
       });
     }
 
+    async function advanceBrokenPhone() {
+      if (!state.isHost) return;
+      const data = state.gameData;
+      const R = data.chainRound || 0;
+      const N = Object.keys(data.players || {}).length;
+      const playerOrder = data.playerOrder || Object.keys(data.players || {});
+
+      if (R + 1 >= N) {
+        await state.gameRef.update({ phase: 'showcase' });
+        return;
+      }
+
+      const nextRound = R + 1;
+      const isDrawing = nextRound % 2 === 1;
+      const updates = { chainRound: nextRound, phase: isDrawing ? 'drawing' : 'writing' };
+
+      playerOrder.forEach((pid, idx) => {
+        const chainIdx = (idx - nextRound + N) % N;
+        const key = `${chainIdx}_${nextRound}`;
+        updates[`chainEntries.${key}`] = { playerId: pid, type: isDrawing ? 'drawing' : 'text', ...(isDrawing ? { strokes: [] } : { text: '' }) };
+      });
+
+      if (isDrawing) {
+        updates.drawingEndTime = Date.now() + DRAWING_DURATION * 1000;
+      } else {
+        updates.writingEndTime = Date.now() + WRITING_DURATION * 1000;
+      }
+
+      try {
+        await state.gameRef.update(updates);
+      } catch (e) {
+        console.error('advanceBrokenPhone failed:', e);
+      }
+    }
+
+    async function advanceAliasTurn() {
+      const data = state.gameData;
+      if (!data) return;
+      const playerOrder = data.playerOrder || Object.keys(data.players || {});
+      const N = playerOrder.length;
+      const nextIdx = ((data.aliasExplainerIdx || 0) + 1) % N;
+      const usedWords = data.aliasUsedWords || [];
+      const wordEntry = pickAliasWord(usedWords);
+      const aliasTarget = data.aliasTargetScore || ALIAS_TARGET_SCORE;
+
+      let isFinished = false;
+      for (const pid of Object.keys(data.players || {})) {
+        if ((data.players[pid]?.score || 0) >= aliasTarget) {
+          isFinished = true;
+          break;
+        }
+      }
+
+      if (isFinished) {
+        await state.gameRef.update({ phase: 'leaderboard' });
+        return;
+      }
+
+      await state.gameRef.update({
+        aliasExplainerIdx: nextIdx,
+        aliasWord: wordEntry.word,
+        aliasTaboo: wordEntry.taboo,
+        aliasGuessed: false,
+        aliasGuesserId: null,
+        aliasGuessedAt: null,
+        aliasEndTime: Date.now() + ALIAS_ROUND_DURATION * 1000,
+        aliasSkipUsed: {},
+        chatMessages: [],
+        scoreRound: (data.scoreRound || 0) + 1,
+        phase: 'explaining',
+        turnStartTime: Date.now(),
+        aliasUsedWords: firebase.firestore.FieldValue.arrayUnion(wordEntry.word),
+      });
+    }
+
     async function advanceToNextRound() {
       if (!state.isHost) return;
       const data = state.gameData;
@@ -2048,6 +2309,24 @@
     }
 
     // ============================================================
+    // BROKEN PHONE HELPERS
+    // ============================================================
+    function getMyChainInfo(data) {
+      const playerOrder = data.playerOrder || Object.keys(data.players || {});
+      const myIdx = playerOrder.indexOf(state.user?.uid);
+      if (myIdx === -1) return null;
+      const N = playerOrder.length;
+      const R = data.chainRound || 0;
+      const chainIdx = (myIdx - R + N) % N;
+      const key = `${chainIdx}_${R}`;
+      const prevKey = R > 0 ? `${chainIdx}_${R - 1}` : null;
+      const prevEntry = prevKey ? (data.chainEntries?.[prevKey] || null) : null;
+      const isDrawing = R % 2 === 1;
+      const myEntry = data.chainEntries?.[key] || null;
+      return { myIdx, N, R, chainIdx, key, prevEntry, isDrawing, myEntry, playerOrder };
+    }
+
+    // ============================================================
     // RENDER
     // ============================================================
     function render() {
@@ -2062,14 +2341,30 @@
         case 'lobby':
           renderLobby(app, data);
           break;
+        case 'writing':
+          renderBrokenPhoneWriting(app, data);
+          break;
+        case 'explaining':
+          renderAlias(app, data);
+          break;
         case 'drawing':
-          renderDrawing(app, data);
+          if ((data.gameMode || DEFAULT_GAME_MODE) === 'broken-phone') {
+            renderBrokenPhoneDrawing(app, data);
+          } else {
+            renderDrawing(app, data);
+          }
           break;
         case 'exhibition':
           renderExhibition(app, data);
           break;
         case 'reveal':
           renderReveal(app, data);
+          break;
+        case 'showcase':
+          renderShowcase(app, data);
+          break;
+        case 'leaderboard':
+          renderLeaderboard(app, data);
           break;
         default:
           renderJoin(app);
@@ -2397,6 +2692,29 @@
             roundsContainer.appendChild(btn);
           });
 
+          // Alias target score buttons
+          const aliasContainer = $('#cfg-alias-target-container');
+          aliasContainer.innerHTML = '';
+          [3,5,8,10,15].forEach(n => {
+            const btn = document.createElement('button');
+            btn.textContent = n;
+            btn.className = 'cfg-alias-btn px-4 py-2 font-bold';
+            const isActive = (data.aliasTargetScore || ALIAS_TARGET_SCORE) === n;
+            btn.style.cssText = `border-radius:10px;border:2px solid ${isActive ? '#00e5a0' : 'rgba(0,229,160,0.2)'};background:${isActive ? 'rgba(0,229,160,0.15)' : 'rgba(42,20,82,0.4)'};color:${isActive ? '#00e5a0' : '#f0eaff'};cursor:pointer`;
+            btn.addEventListener('click', () => {
+              $$('#cfg-alias-target-container .cfg-alias-btn').forEach(b => {
+                b.style.borderColor = 'rgba(0,229,160,0.2)';
+                b.style.background = 'rgba(42,20,82,0.4)';
+                b.style.color = '#f0eaff';
+              });
+              btn.style.borderColor = '#00e5a0';
+              btn.style.background = 'rgba(0,229,160,0.15)';
+              btn.style.color = '#00e5a0';
+              state._cfgAliasTarget = n;
+            });
+            aliasContainer.appendChild(btn);
+          });
+
           // Mode buttons
           const modesContainer = $('#cfg-modes-container');
           modesContainer.innerHTML = '';
@@ -2414,9 +2732,19 @@
               btn.style.borderColor = '#00e5a0';
               btn.style.background = 'rgba(0,229,160,0.15)';
               state._cfgMode = m.id;
+              const isAlias = m.id === 'alias';
+              const roundsDiv = $('#cfg-rounds-container').parentElement;
+              if (roundsDiv) roundsDiv.style.display = isAlias ? 'none' : '';
+              $('#cfg-alias-score-container').style.display = isAlias ? '' : 'none';
             });
             modesContainer.appendChild(btn);
           });
+
+          // Show/hide alias target based on current mode
+          const curMode = data.gameMode || 'impostor';
+          const roundsDiv = $('#cfg-rounds-container').parentElement;
+          if (roundsDiv) roundsDiv.style.display = curMode === 'alias' ? 'none' : '';
+          $('#cfg-alias-score-container').style.display = curMode === 'alias' ? '' : 'none';
 
           // Custom words status
           const statusEl = $('#cfg-custom-words-status');
@@ -2427,8 +2755,15 @@
             statusEl.style.display = 'none';
           }
 
+          // Show/hide alias target based on current mode
+          const curMode = data.gameMode || 'impostor';
+          const roundsDiv = $('#cfg-rounds-container').parentElement;
+          if (roundsDiv) roundsDiv.style.display = curMode === 'alias' ? 'none' : '';
+          $('#cfg-alias-score-container').style.display = curMode === 'alias' ? '' : 'none';
+
           state._cfgRounds = data.maxRounds || 3;
           state._cfgMode = data.gameMode || 'impostor';
+          state._cfgAliasTarget = data.aliasTargetScore || ALIAS_TARGET_SCORE;
 
           modal.classList.add('open');
         });
@@ -2444,11 +2779,13 @@
         // Save button
         $('#btn-modal-save').addEventListener('click', () => {
           const name = $('#cfg-name').value.trim() || 'המתחזה';
-          state.gameRef.update({
+          const updates = {
             gameName: name,
             maxRounds: state._cfgRounds || 3,
             gameMode: state._cfgMode || 'impostor',
-          });
+          };
+          if (state._cfgAliasTarget) updates.aliasTargetScore = state._cfgAliasTarget;
+          state.gameRef.update(updates);
           SOUND.click();
           toast('הגדרות נשמרו!');
           $('#config-modal').classList.remove('open');
@@ -2463,6 +2800,619 @@
             e.target.value = '';
           }
         });
+      }
+    }
+
+    // ---- BROKEN PHONE: WRITING ----
+    function renderBrokenPhoneWriting(container, data) {
+      const me = data.players?.[state.user?.uid];
+      if (!me) {
+        container.innerHTML = `<div class="text-center p-8"><div class="glass-card bg-red-300 p-6 font-bold text-xl">אירעה שגיאה - לא שובצת למשחק</div></div>`;
+        return;
+      }
+
+      if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+      if (window._drawWatch) { clearInterval(window._drawWatch); window._drawWatch = null; }
+
+      const info = getMyChainInfo(data);
+      const allPlayers = Object.values(data.players);
+      const endTime = data.writingEndTime || (Date.now() + WRITING_DURATION * 1000);
+      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const hasSubmitted = info?.myEntry?.text && info.myEntry.text.length > 0;
+
+      container.innerHTML = `
+        <div class="max-w-lg mx-auto">
+          <div class="flex items-center justify-between mb-3">
+            <div class="room-label">📞 טלפון שבור</div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm">שלב ${(info?.R || 0) + 1}/${info?.N || '...'}</span>
+              <div id="bp-writing-timer" class="timer-ring ${remaining <= 5 ? 'urgent' : ''}">${remaining}</div>
+            </div>
+          </div>
+
+          <div class="glass-card p-4 mb-4">
+            ${!info?.prevEntry ? `
+              <p class="font-bold text-lg mb-3 text-center" style="color:#00e5a0">כתוב משפט להתחלת השרשרת!</p>
+            ` : info.prevEntry.type === 'drawing' ? `
+              <p class="section-title text-sm mb-1">הציור שקיבלת:</p>
+              <div style="aspect-ratio:4/3;background:#fff;border-radius:8px;margin-bottom:12px">
+                <canvas id="prev-drawing-canvas" style="width:100%;height:100%"></canvas>
+              </div>
+              <p class="text-sm font-bold mb-2">תאר במילים את מה שרואים בציור:</p>
+            ` : `
+              <div class="glass-card-flat p-3 mb-3">
+                <p class="section-title text-sm mb-1">המשפט שקיבלת:</p>
+                <p class="font-bold text-lg" style="color:#00e5a0">${info.prevEntry.text}</p>
+              </div>
+            `}
+            <textarea id="bp-writing-input" class="inp w-full p-3 font-bold" placeholder="כתוב כאן..." maxlength="200" rows="3" ${hasSubmitted ? 'disabled' : ''}>${info?.myEntry?.text || ''}</textarea>
+          </div>
+
+          <div class="flex gap-2">
+            <button id="btn-submit-text" class="btn-mint flex-1 py-3 font-bold" ${hasSubmitted ? 'disabled' : ''}>${hasSubmitted ? '✅ נשלח' : 'שלח'}</button>
+            ${state.isHost ? `
+              <button id="btn-advance-bp" class="btn-purple px-4 py-3 font-bold">המשך</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      updateAvatarPreviews(container);
+
+      // Render previous drawing if exists
+      if (info?.prevEntry?.type === 'drawing' && info.prevEntry.strokes?.length > 0) {
+        setTimeout(() => {
+          const canvasEl = $('#prev-drawing-canvas');
+          if (!canvasEl) return;
+          const parent_ = canvasEl.parentElement;
+          const dpr = window.devicePixelRatio || 1;
+          const w = parent_.clientWidth;
+          const h = parent_.clientHeight;
+          canvasEl.width = w * dpr;
+          canvasEl.height = h * dpr;
+          canvasEl.style.width = w + 'px';
+          canvasEl.style.height = h + 'px';
+          const ctx = canvasEl.getContext('2d');
+          ctx.scale(dpr, dpr);
+          redrawCanvas(ctx, w, h, info.prevEntry.strokes);
+        }, 50);
+      }
+
+      // Submit text
+      const submitBtn = $('#btn-submit-text');
+      if (submitBtn) {
+        submitBtn.addEventListener('click', () => {
+          const text = $('#bp-writing-input').value.trim();
+          if (!text) { toast('נא לכתוב משהו', true); return; }
+          SOUND.click();
+          saveTextRealtime(text);
+          submitBtn.disabled = true;
+          submitBtn.textContent = '✅ נשלח';
+        });
+      }
+
+      // Host advance
+      const advBtn = $('#btn-advance-bp');
+      if (advBtn) {
+        advBtn.addEventListener('click', () => {
+          SOUND.click();
+          advanceBrokenPhone();
+        });
+      }
+
+      // Countdown timer
+      const timerEl_ = $('#bp-writing-timer');
+      if (timerEl_) {
+        let lastTick_ = -1;
+        state.timerInterval = setInterval(() => {
+          const e = data.writingEndTime || (Date.now() + WRITING_DURATION * 1000);
+          const r = Math.max(0, Math.ceil((e - Date.now()) / 1000));
+          timerEl_.textContent = r;
+          timerEl_.className = 'timer-ring' + (r <= 5 ? ' urgent' : '');
+          if (r <= 5 && r !== lastTick_) { lastTick_ = r; SOUND.tick(); }
+          if (r <= 0 && state.isHost) {
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            if (state.gameData?.phase === 'writing') {
+              advanceBrokenPhone();
+            }
+          }
+        }, 200);
+      }
+
+      // Auto-save text on input every 2s
+      const textInput = $('#bp-writing-input');
+      if (textInput && !hasSubmitted) {
+        let saveTimer = null;
+        textInput.addEventListener('input', () => {
+          if (saveTimer) clearTimeout(saveTimer);
+          saveTimer = setTimeout(() => {
+            const val = textInput.value.trim();
+            if (val) saveTextRealtime(val);
+          }, 2000);
+        });
+      }
+    }
+
+    // ---- BROKEN PHONE: DRAWING ----
+    function renderBrokenPhoneDrawing(container, data) {
+      const me = data.players?.[state.user?.uid];
+      if (!me) {
+        container.innerHTML = `<div class="text-center p-8"><div class="glass-card bg-red-300 p-6 font-bold text-xl">אירעה שגיאה - לא שובצת למשחק</div></div>`;
+        return;
+      }
+
+      if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+      if (window._drawWatch) { clearInterval(window._drawWatch); window._drawWatch = null; }
+
+      const info = getMyChainInfo(data);
+      const allPlayers = Object.values(data.players);
+      const endTime = data.drawingEndTime || (Date.now() + DRAWING_DURATION * 1000);
+      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const existingStrokes = info?.myEntry?.strokes || [];
+
+      container.innerHTML = `
+        <div class="max-w-lg mx-auto">
+          <div class="flex items-center justify-between mb-3">
+            <div class="room-label">📞 טלפון שבור</div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm">שלב ${(info?.R || 0) + 1}/${info?.N || '...'}</span>
+              <div id="bp-drawing-timer" class="timer-ring ${remaining <= 5 ? 'urgent' : ''}">${remaining}</div>
+            </div>
+          </div>
+
+          <div class="glass-card p-4 mb-4">
+            ${info?.prevEntry?.type === 'text' ? `
+              <div class="glass-card-flat p-3 mb-3">
+                <p class="section-title text-sm mb-1">המשפט שקיבלת:</p>
+                <p class="font-bold text-lg" style="color:#00e5a0">${info.prevEntry.text}</p>
+              </div>
+            ` : `
+              <p class="font-bold text-lg mb-3 text-center" style="color:#00e5a0">צייר משהו שתואם את הטקסט!</p>
+            `}
+          </div>
+
+          <div class="canvas-wrapper relative" style="aspect-ratio:4/3;max-height:55vh">
+            <canvas id="bp-draw-canvas"></canvas>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2 drawing-tools">
+            <div class="flex gap-1">
+              ${COLORS.map(c => `
+                <button class="color-btn ${c === state.drawing.currentColor ? 'active' : ''}" data-color="${c}" style="background:${c}"></button>
+              `).join('')}
+            </div>
+            <div class="flex gap-1 mr-2">
+              ${WIDTHS.map((w) => `
+                <button class="width-btn ${w === state.drawing.currentWidth ? 'active' : ''}" data-width="${w}" style="width:36px;height:36px">
+                  <div style="width:${w+2}px;height:${w+2}px;background:#000;border-radius:50%"></div>
+                </button>
+              `).join('')}
+            </div>
+            <button id="btn-clear-bp" class="btn-purple px-3 py-1 font-bold text-sm">נקה</button>
+          </div>
+
+          <div class="flex gap-2 mt-3">
+            ${state.isHost ? `
+              <button id="btn-advance-bp-draw" class="btn-mint flex-1 py-3 font-bold">המשך</button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      updateAvatarPreviews(container);
+
+      // Setup canvas
+      const canvasEl = $('#bp-draw-canvas');
+      if (canvasEl) {
+        if (canvasEl._cleanup) canvasEl._cleanup();
+        state.drawing.canvas = null;
+        state.drawing.ctx = null;
+        state.drawing.strokes = JSON.parse(JSON.stringify(existingStrokes));
+        setupCollaborativeCanvas(canvasEl, state.drawing.strokes);
+
+        // Color buttons
+        $$('.color-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.drawing.currentColor = btn.dataset.color;
+            $$('.color-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+          });
+        });
+
+        // Width buttons
+        $$('.width-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.drawing.currentWidth = parseInt(btn.dataset.width);
+            $$('.width-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+          });
+        });
+
+        // Clear button
+        const clearBtn = $('#btn-clear-bp');
+        if (clearBtn) {
+          clearBtn.addEventListener('click', () => {
+            state.drawing.strokes = [];
+            const canvas_ = state.drawing.canvas;
+            if (canvas_) {
+              const dpr_ = window.devicePixelRatio || 1;
+              const w_ = canvas_.width / dpr_;
+              const h_ = canvas_.height / dpr_;
+              redrawCanvas(state.drawing.ctx, w_, h_, state.drawing.strokes);
+            }
+          });
+        }
+
+        // No _drawWatch needed - each player only sees their own strokes
+      }
+
+      // Host advance
+      const advBtn = $('#btn-advance-bp-draw');
+      if (advBtn) {
+        advBtn.addEventListener('click', () => {
+          SOUND.click();
+          advanceBrokenPhone();
+        });
+      }
+
+      // Countdown timer
+      const timerEl_ = $('#bp-drawing-timer');
+      if (timerEl_) {
+        let lastTick_ = -1;
+        state.timerInterval = setInterval(() => {
+          const e = data.drawingEndTime || (Date.now() + DRAWING_DURATION * 1000);
+          const r = Math.max(0, Math.ceil((e - Date.now()) / 1000));
+          timerEl_.textContent = r;
+          timerEl_.className = 'timer-ring' + (r <= 5 ? ' urgent' : '');
+          if (r <= 5 && r !== lastTick_) { lastTick_ = r; SOUND.tick(); }
+          if (r <= 0 && state.isHost) {
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            if (state.gameData?.phase === 'drawing' && (state.gameData.gameMode || DEFAULT_GAME_MODE) === 'broken-phone') {
+              advanceBrokenPhone();
+            }
+          }
+        }, 200);
+      }
+    }
+
+    // ---- BROKEN PHONE: SHOWCASE ----
+    function renderShowcase(container, data) {
+      const me = data.players?.[state.user?.uid];
+      const players = Object.values(data.players || {});
+      const playerOrder = data.playerOrder || players.map(p => p.id);
+      const N = playerOrder.length;
+      const chainEntries = data.chainEntries || {};
+      const myVote = data.chainVotes?.[state.user?.uid];
+      const allVotesIn_ = playerOrder.every(pid => data.chainVotes?.[pid] !== undefined);
+
+      if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+
+      // Build chains display
+      let chainsHtml = '';
+      for (let ci = 0; ci < N; ci++) {
+        const startPid = playerOrder[ci];
+        const startPlayer = data.players[startPid];
+        let entriesHtml = '';
+        for (let ei = 0; ei < N; ei++) {
+          const key = `${ci}_${ei}`;
+          const entry = chainEntries[key];
+          if (!entry) continue;
+          const entryPlayer = data.players[entry.playerId];
+          const isText = entry.type === 'text';
+          const entryContent = isText
+            ? `<div class="glass-card-flat p-3 font-bold text-lg" style="background:rgba(0,229,160,0.08);border-color:rgba(0,229,160,0.15)">${entry.text || '...'}</div>`
+            : `<div style="aspect-ratio:4/3;background:#fff;border-radius:8px"><canvas id="sc-drawing-${ci}-${ei}" style="width:100%;height:100%"></canvas></div>`;
+          entriesHtml += `
+            <div class="mb-2">
+              <div class="flex items-center gap-2 mb-1">
+                <div class="player-avatar" style="width:26px;height:26px;font-size:13px">${renderAvatar(entryPlayer, 26)}</div>
+                <span class="font-bold text-xs" style="color:${playerColor(entry.playerId, playerOrder)}">${entryPlayer?.name || '?'}</span>
+              </div>
+              ${entryContent}
+            </div>
+          `;
+        }
+        const chainVoteCount = Object.values(data.chainVotes || {}).filter(v => v === ci).length;
+        chainsHtml += `
+          <div class="glass-card p-4 mb-4 ${myVote === ci ? 'ring-2' : ''}" style="${myVote === ci ? 'border-color:#00e5a0' : ''}">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="player-avatar" style="width:32px;height:32px;font-size:16px">${renderAvatar(startPlayer, 32)}</div>
+                <span class="font-bold">${startPlayer?.name || '?'}</span>
+              </div>
+              <div class="text-sm hint-text">${chainVoteCount} הצבעות</div>
+            </div>
+            ${entriesHtml}
+            <div class="mt-3 text-center">
+              <button class="btn-vote-chain ${myVote === ci ? 'btn-mint' : 'btn-purple'} px-5 py-2 font-bold" data-chain="${ci}" ${myVote !== undefined ? 'disabled' : ''}>
+                ${myVote === ci ? '✅ הצבעת!' : 'הצבע לשרשרת הזו'}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="max-w-lg mx-auto">
+          <div class="text-center mb-4">
+            <h1 class="text-3xl font-black text-white">📞 טלפון שבור</h1>
+            <p class="font-bold" style="color:#00e5a0">כל השרשראות</p>
+            <p class="text-sm hint-text">הצבע על השרשרת המוצלחת ביותר!</p>
+          </div>
+          ${chainsHtml}
+          ${state.isHost && (myVote !== undefined || allVotesIn_) ? `
+            <div class="text-center mt-4 mb-8">
+              <button id="btn-bp-leaderboard" class="btn-mint px-8 py-4 text-xl font-bold">🏆 לוח הניקוד</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      updateAvatarPreviews(container);
+
+      // Render all showcase drawings
+      setTimeout(() => {
+        for (let ci = 0; ci < N; ci++) {
+          for (let ei = 0; ei < N; ei++) {
+            const key = `${ci}_${ei}`;
+            const entry = chainEntries[key];
+            if (!entry || entry.type !== 'drawing' || !entry.strokes?.length) continue;
+            const canvasEl = document.getElementById(`sc-drawing-${ci}-${ei}`);
+            if (!canvasEl) continue;
+            const parent_ = canvasEl.parentElement;
+            const dpr_ = window.devicePixelRatio || 1;
+            const w = parent_.clientWidth;
+            const h = parent_.clientHeight;
+            canvasEl.width = w * dpr_;
+            canvasEl.height = h * dpr_;
+            canvasEl.style.width = w + 'px';
+            canvasEl.style.height = h + 'px';
+            const ctx = canvasEl.getContext('2d');
+            ctx.scale(dpr_, dpr_);
+            redrawCanvas(ctx, w, h, entry.strokes);
+          }
+        }
+      }, 100);
+
+      // Vote buttons
+      $$('.btn-vote-chain').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const chainIdx = parseInt(btn.dataset.chain);
+          SOUND.vote();
+          try {
+            await state.gameRef.update({
+              [`chainVotes.${state.user.uid}`]: chainIdx,
+            });
+          } catch (e) {}
+        });
+      });
+
+      // Leaderboard advance
+      const lbBtn = $('#btn-bp-leaderboard');
+      if (lbBtn) {
+        lbBtn.addEventListener('click', async () => {
+          SOUND.click();
+          await _finishBrokenPhone();
+        });
+      }
+    }
+
+    async function _finishBrokenPhone() {
+      const data = state.gameData;
+      if (!data) return;
+      const playerOrder = data.playerOrder || Object.keys(data.players || {});
+      const chainVotes = data.chainVotes || {};
+      const updates = { phase: 'leaderboard' };
+      for (const [voterId, chainIdx] of Object.entries(chainVotes)) {
+        const startPid = playerOrder[chainIdx];
+        if (startPid) {
+          updates[`players.${startPid}.score`] = firebase.firestore.FieldValue.increment(10);
+        }
+      }
+      for (const voterId of Object.keys(chainVotes)) {
+        updates[`players.${voterId}.score`] = firebase.firestore.FieldValue.increment(5);
+      }
+      try {
+        await state.gameRef.update(updates);
+      } catch (e) {
+        console.error('_finishBrokenPhone failed:', e);
+      }
+    }
+
+    // ---- ALIAS (ELIAS GAME) ----
+    function renderAlias(container, data) {
+      const me = data.players?.[state.user?.uid];
+      if (!me) {
+        container.innerHTML = `<div class="text-center p-8"><div class="glass-card bg-red-300 p-6 font-bold text-xl">אירעה שגיאה</div></div>`;
+        return;
+      }
+
+      if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+
+      const savedChatInput = $('#alias-chat-input')?.value || '';
+
+      const playerOrder = data.playerOrder || Object.values(data.players).map(p => p.id);
+      const explainerIdx = data.aliasExplainerIdx || 0;
+      const explainerPid = playerOrder[explainerIdx];
+      const explainer = data.players[explainerPid];
+      const isExplainer = state.user?.uid === explainerPid;
+      const allPlayers = Object.values(data.players);
+      const endTime = data.aliasEndTime || (Date.now() + ALIAS_ROUND_DURATION * 1000);
+      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const chatMsgs = data.chatMessages || [];
+      const guessed = data.aliasGuessed;
+      const showCelebration = guessed && data.aliasGuesserId;
+      const guesserName = showCelebration ? data.players[data.aliasGuesserId]?.name || '?' : '';
+
+      const isFinished = Object.values(data.players).some(p => (p.score || 0) >= (data.aliasTargetScore || ALIAS_TARGET_SCORE));
+
+      container.innerHTML = `
+        <div class="max-w-3xl mx-auto">
+          <div class="flex items-center justify-between mb-3">
+            <div class="room-label">🗣️ אליאס</div>
+            <div class="flex items-center gap-3">
+              <span class="text-sm hint-text">יעד: ${data.aliasTargetScore || ALIAS_TARGET_SCORE} נק'</span>
+              <div id="alias-timer" class="timer-ring ${remaining <= 10 ? 'urgent' : ''}">${remaining}</div>
+            </div>
+          </div>
+
+          ${!isExplainer ? `
+            <div class="glass-card p-4 mb-3 text-center">
+              <div class="flex items-center justify-center gap-2 mb-2">
+                <div class="player-avatar" style="width:36px;height:36px;font-size:18px">${renderAvatar(explainer, 36)}</div>
+                <span class="font-bold text-xl" style="color:#00e5a0">${explainer?.name || '?'}</span>
+              </div>
+              <p class="font-bold text-lg">מסביר כרגע...</p>
+              <div class="flex gap-1 justify-center mt-2">
+                ${Array.from({ length: data.aliasWord?.length || 0 }, (_, i) => `<span class="inline-block w-6 h-8 border-b-2 border-[#00e5a0] mx-0.5 text-center font-bold text-lg" style="color:#00e5a0"></span>`).join('')}
+              </div>
+            </div>
+          ` : `
+            <div class="glass-card p-4 mb-3 text-center">
+              <p class="font-bold mb-2" style="color:#00e5a0">זה התור שלך! תסביר לחברים!</p>
+              <div class="text-4xl font-black mb-3" style="color:#fff;letter-spacing:2px">${data.aliasWord}</div>
+              <div class="flex flex-wrap gap-2 justify-center mb-2">
+                ${(data.aliasTaboo || []).map(t => `<span class="px-3 py-1 font-bold text-sm" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.4);border-radius:8px;color:#ff6b6b">✕ ${t}</span>`).join('')}
+              </div>
+              ${!data.aliasSkipUsed?.[state.user?.uid] ? `
+                <button id="btn-skip-word" class="btn-purple px-4 py-1 text-sm font-bold">דלג (−1 נק')</button>
+              ` : ''}
+            </div>
+          `}
+
+          <div class="glass-card p-3 mb-3" style="max-height:50vh;overflow-y:auto;display:flex;flex-direction:column">
+            <div id="alias-chat-messages" class="flex-1 space-y-2 mb-3" style="min-height:200px;max-height:40vh;overflow-y:auto">
+              ${chatMsgs.map(msg => {
+                const p = data.players?.[msg.pid];
+                const isMe = msg.pid === state.user?.uid;
+                return `<div class="flex items-start gap-2 ${isMe ? 'justify-start' : ''}">
+                  <div class="player-avatar" style="width:24px;height:24px;font-size:12px">${renderAvatar(p, 24)}</div>
+                  <div class="${isMe ? 'font-bold' : ''}" style="background:${isMe ? 'rgba(0,229,160,0.12)' : 'rgba(255,255,255,0.05)'};border-radius:8px;padding:4px 10px;max-width:80%">
+                    <span class="text-xs hint-text">${p?.name || '?'}</span>
+                    <div class="font-bold text-sm">${msg.text}</div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+            <div class="flex gap-2">
+              <input id="alias-chat-input" class="inp flex-1 p-2 font-bold" placeholder="הקלד ניחוש..." maxlength="100" ${guessed || isExplainer ? 'disabled' : ''}>
+              <button id="btn-alias-send" class="btn-mint px-4 py-2 font-bold" ${guessed || isExplainer ? 'disabled' : ''}>שלח</button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            ${allPlayers.map(p => {
+              const pidx = playerOrder.indexOf(p.id);
+              const isOnTurn = p.id === explainerPid;
+              return `<div class="player-card" style="padding:4px 10px;gap:6px;border-right:4px solid ${isOnTurn ? '#00e5a0' : 'transparent'};${isOnTurn ? 'background:rgba(0,229,160,0.08)' : ''}">
+                ${renderAvatar(p, 24)}
+                <span class="font-bold text-xs">${p.name}</span>
+                <span class="text-xs hint-text">${p.score || 0} נק'</span>
+                ${isOnTurn ? '<span class="text-xs font-bold" style="color:#00e5a0">🎤</span>' : ''}
+              </div>`;
+            }).join('')}
+          </div>
+
+          ${state.isHost && !guessed && remaining <= 0 ? `
+            <div class="mt-3 text-center">
+              <button id="btn-advance-alias" class="btn-mint px-6 py-2 font-bold">הבא בתור →</button>
+            </div>
+          ` : ''}
+        </div>
+
+        ${showCelebration ? `
+          <div id="alias-celebration" class="fixed inset-0 flex items-center justify-center" style="z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)">
+            <div class="glass-card p-8 text-center" style="animation:aliasPop 0.5s cubic-bezier(0.34,1.56,0.64,1)">
+              <div style="font-size:64px;margin-bottom:12px">🎉</div>
+              <h2 class="text-3xl font-black mb-2 text-white">ניחוש נכון!</h2>
+              <p class="text-xl font-bold" style="color:#00e5a0">${guesserName} ניחש את המילה!</p>
+              <p class="text-sm hint-text mt-1">+1 נק' ל${guesserName} +1 נק' ל${explainer?.name || '?'}</p>
+            </div>
+          </div>
+        ` : ''}
+      `;
+      updateAvatarPreviews(container);
+
+      // Restore chat input after re-render
+      const restoredInput = $('#alias-chat-input');
+      if (restoredInput && savedChatInput) restoredInput.value = savedChatInput;
+
+      // Scroll chat to bottom
+      const chatEl = $('#alias-chat-messages');
+      if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
+
+      // Chat send
+      const sendBtn = $('#btn-alias-send');
+      const chatInput = $('#alias-chat-input');
+      if (sendBtn && chatInput) {
+        const doSend = async () => {
+          const text = chatInput.value.trim();
+          if (!text) return;
+          SOUND.click();
+          chatInput.value = '';
+          const msg = await saveChatMessage(text);
+          if (msg && isCorrectGuess(text, data.aliasWord) && !data.aliasGuessed) {
+            await state.gameRef.update({
+              aliasGuessed: true,
+              aliasGuesserId: state.user.uid,
+              aliasGuessedAt: Date.now(),
+            });
+          }
+        };
+        sendBtn.addEventListener('click', doSend);
+        chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSend(); });
+      }
+
+      // Skip button
+      const skipBtn = $('#btn-skip-word');
+      if (skipBtn) {
+        skipBtn.addEventListener('click', async () => {
+          SOUND.error();
+          await state.gameRef.update({
+            [`aliasSkipUsed.${state.user.uid}`]: true,
+            [`players.${state.user.uid}.score`]: firebase.firestore.FieldValue.increment(-1),
+          });
+          advanceAliasTurn();
+        });
+      }
+
+      // Host advance
+      const advBtn = $('#btn-advance-alias');
+      if (advBtn) {
+        advBtn.addEventListener('click', () => {
+          SOUND.click();
+          advanceAliasTurn();
+        });
+      }
+
+      // Celebration auto-advance by host (with guard)
+      if (state.isHost && showCelebration && !state._aliasAdvancing) {
+        state._aliasAdvancing = true;
+        setTimeout(() => {
+          state._aliasAdvancing = false;
+          if (state.gameData?.aliasGuessed) {
+            advanceAliasTurn();
+          }
+        }, 2500);
+      }
+
+      // Timer
+      const timerEl = $('#alias-timer');
+      if (timerEl) {
+        let lastTick = -1;
+        state.timerInterval = setInterval(() => {
+          const e = data.aliasEndTime || (Date.now() + ALIAS_ROUND_DURATION * 1000);
+          const r = Math.max(0, Math.ceil((e - Date.now()) / 1000));
+          timerEl.textContent = r;
+          timerEl.className = 'timer-ring' + (r <= 10 ? ' urgent' : '');
+          if (r <= 5 && r !== lastTick) { lastTick = r; SOUND.tick(); }
+          if (r <= 0 && state.isHost && !state.gameData?.aliasGuessed) {
+            clearInterval(state.timerInterval);
+            state.timerInterval = null;
+            if (state.gameData?.phase === 'explaining') {
+              advanceAliasTurn();
+            }
+          }
+        }, 200);
       }
     }
 
@@ -2891,6 +3841,8 @@
       const roundResults = data.roundResults || [];
       const gameMode = data.gameMode || DEFAULT_GAME_MODE;
       const isImpostorMode = gameMode === 'impostor';
+      const isBrokenPhone = gameMode === 'broken-phone';
+      const isAlias = gameMode === 'alias';
 
       container.innerHTML = `
         <div class="max-w-2xl mx-auto reveal-overlay">
@@ -2906,14 +3858,14 @@
                 <div class="player-avatar" style="width:44px;height:44px">${renderAvatar(p, 44)}</div>
                 <div class="flex-1">
                   <div class="font-bold text-lg text-white">${p.name} ${p.id === data.hostId ? '(מארח)' : ''}</div>
-                  <div class="text-sm hint-text">${!isImpostorMode ? '🎨 צייר' : p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'}</div>
+                  <div class="text-sm hint-text">${isAlias ? '🗣️ אליאס' : isBrokenPhone ? '📞 טלפון שבור' : !isImpostorMode ? '🎨 צייר' : p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'}</div>
                 </div>
                 <div class="text-3xl font-black" style="color:#00e5a0">${p.score || 0}</div>
               </div>
             `).join('')}
           </div>
 
-          ${roundResults.length > 0 ? `
+          ${!isBrokenPhone && roundResults.length > 0 ? `
             <div class="glass-card p-4 mt-4">
               <div class="section-title mb-3">📋 תוצאות לפי סיבוב</div>
               ${roundResults.map((rr, ri) => {
@@ -2929,7 +3881,40 @@
                 `;
               }).join('')}
             </div>
+          ` : isBrokenPhone && data.chainVotes && Object.keys(data.chainVotes).length > 0 ? `
+            <div class="glass-card p-4 mt-4">
+              <div class="section-title mb-3">📊 תוצאות ההצבעה</div>
+              ${(() => {
+                const cv = data.chainVotes || {};
+                const counts = {};
+                const playerOrder = data.playerOrder || Object.keys(data.players || {});
+                for (const v of Object.values(cv)) {
+                  counts[v] = (counts[v] || 0) + 1;
+                }
+                let winnerChain = null, winnerCount = 0;
+                for (const [ci, cnt] of Object.entries(counts)) {
+                  if (cnt > winnerCount) { winnerCount = cnt; winnerChain = parseInt(ci); }
+                }
+                const winnerPid = playerOrder[winnerChain];
+                const winnerP = winnerPid ? data.players[winnerPid] : null;
+                return playerOrder.map((pid, ci) => {
+                  const p = data.players[pid];
+                  const cnt = counts[ci] || 0;
+                  return `<div class="glass-card-flat p-2 mb-1 flex items-center gap-2 ${ci === winnerChain ? 'ring-2' : ''}" style="${ci === winnerChain ? 'border-color:#00e5a0;background:rgba(0,229,160,0.08)' : ''}">
+                    <span class="font-bold text-sm">${p?.name || '?'}</span>
+                    <span class="text-xs hint-text">${cnt} הצבעות</span>
+                    ${ci === winnerChain ? '<span class="font-bold text-xs" style="color:#00e5a0">🏆 מנצח</span>' : ''}
+                  </div>`;
+                }).join('');
+              })()}
+            </div>
           ` : ''}
+
+          <div class="text-center mt-8">
+            <button id="btn-new-game" class="btn-mint px-8 py-4 text-xl font-bold">🔄 משחק חדש</button>
+          </div>
+        </div>
+      `;
 
           <div class="text-center mt-8">
             <button id="btn-new-game" class="btn-mint px-8 py-4 text-xl font-bold">🔄 משחק חדש</button>
