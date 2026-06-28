@@ -689,6 +689,34 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Sparkle burst effect */
+    .sparkle-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .sparkle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #00e5a0;
+      animation: sparkleFly 0.6s ease-out forwards;
+    }
+
+    @keyframes sparkleFly {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0);
+      }
+    }
+
     /* Orientation overlay for mobile landscape → portrait prompt */
     #rotate-overlay {
       position: fixed;
@@ -828,6 +856,7 @@
     }
     const SOUND = {
       click() { _playTone(660, 0.06, 'square', 0.1); },
+      poof() { _playNoise(0.12, 0.2); },
       join() { _playTone(520, 0.12, 'sine', 0.15); setTimeout(() => _playTone(680, 0.12, 'sine', 0.15), 100); },
       start() { _playTone(440, 0.15, 'sine', 0.2); setTimeout(() => _playTone(580, 0.15, 'sine', 0.2), 130); setTimeout(() => _playTone(720, 0.25, 'sine', 0.2), 260); },
       tick() { _playTone(800, 0.03, 'square', 0.05); },
@@ -1546,31 +1575,6 @@
               </div>
 
               <div>
-                <label class="section-title block mb-2">🍳 מטבח האמוג'י — בנה את הדמות שלך</label>
-                <div class="flex items-center gap-4 mb-3">
-                  <div class="avatar-preview" id="avatar-preview" style="position:relative;font-size:0;overflow:hidden;border-radius:6px">
-                    <img id="preview-img" src="${ekUrl(VEGETABLES[selectedVegIdx], EMOTIONS[selectedEmoIdx])}" onerror="this.style.display='none'" onload="this.style.opacity='1';var s=this.parentElement.querySelector('.af');if(s)s.style.opacity='0'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">
-                    <span class="af" id="preview-fallback" style="font-size:40px;line-height:80px;transition:opacity 0.3s">${VEGETABLES[selectedVegIdx]}${EMOTIONS[selectedEmoIdx]}</span>
-                  </div>
-                  <div class="flex-1 text-sm hint-text">
-                    בחר ירק + רגש, כולם יראו את הדמות שלך!
-                  </div>
-                </div>
-                <div class="section-title mb-1" style="font-size:11px">ירק</div>
-                <div class="flex flex-wrap gap-1 mb-2" id="veg-selector">
-                  ${VEGETABLES.map((v, i) => `
-                    <button class="avatar-option ${i === selectedVegIdx ? 'selected' : ''}" data-idx="${i}">${v}</button>
-                  `).join('')}
-                </div>
-                <div class="section-title mb-1" style="font-size:11px">רגש</div>
-                <div class="flex flex-wrap gap-1 mb-2" id="emo-selector">
-                  ${EMOTIONS.map((e, i) => `
-                    <button class="avatar-option ${i === selectedEmoIdx ? 'selected' : ''}" data-idx="${i}">${e}</button>
-                  `).join('')}
-                </div>
-              </div>
-
-              <div>
                 <label class="section-title block mb-1">קוד חדר</label>
                 <div class="flex gap-2">
                   <input id="join-code" class="inp flex-1 p-3 text-lg font-bold text-center tracking-widest uppercase" placeholder="ABCD" maxlength="4" style="letter-spacing:4px">
@@ -1578,49 +1582,14 @@
                 </div>
               </div>
 
-              <div class="border-t-4 border-dashed" style="border-color:#00e5a0"></div>
+              <div class="border-t border-dashed" style="border-color:rgba(0,229,160,0.2)"></div>
               <button id="btn-create" class="btn-mint w-full py-4 text-xl font-bold">צור משחק חדש</button>
             </div>
 
-            <div id="join-error" class="glass-card-flat p-3 font-bold hidden" style="background:#ff6b6b;color:#fff"></div>
+            <div id="join-error" class="glass-card-flat p-3 font-bold hidden" style="background:rgba(255,107,107,0.2);border-color:rgba(255,107,107,0.3);color:#ff6b6b"></div>
           </div>
         </div>
       `;
-
-      // Avatar builder listeners
-      const updatePreview = () => {
-        const veg = VEGETABLES[state._selVeg ?? 0];
-        const emo = EMOTIONS[state._selEmo ?? 0];
-        const img = $('#preview-img');
-        const fallback = $('#preview-fallback');
-        if (img) {
-          img.style.display = '';
-          img.style.opacity = '0';
-          img.src = ekUrl(veg, emo);
-        }
-        if (fallback) {
-          fallback.style.opacity = '1';
-          fallback.textContent = veg + emo;
-        }
-      };
-
-      $$('#veg-selector .avatar-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state._selVeg = parseInt(btn.dataset.idx);
-          $$('#veg-selector .avatar-option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          updatePreview();
-        });
-      });
-
-      $$('#emo-selector .avatar-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state._selEmo = parseInt(btn.dataset.idx);
-          $$('#emo-selector .avatar-option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          updatePreview();
-        });
-      });
 
       $('#join-name').addEventListener('input', () => {
         state.playerName = $('#join-name').value;
@@ -1633,9 +1602,7 @@
         const btn = $('#btn-create');
         btn.disabled = true; btn.classList.add('btn-loading');
         try {
-          const veg = VEGETABLES[state._selVeg ?? 0];
-          const emo = EMOTIONS[state._selEmo ?? 0];
-          await createGame(name, veg, emo);
+          await createGame(name, '🥕', '😊');
           state.playerName = name;
         } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
       });
@@ -1649,9 +1616,7 @@
         const btn = $('#btn-join');
         btn.disabled = true; btn.classList.add('btn-loading');
         try {
-          const veg = VEGETABLES[state._selVeg ?? 0];
-          const emo = EMOTIONS[state._selEmo ?? 0];
-          await joinGame(code, name, veg, emo);
+          await joinGame(code, name, '🥕', '😊');
           state.playerName = name;
         } catch (e) { showError(e.message); btn.disabled = false; btn.classList.remove('btn-loading'); }
       });
@@ -1676,6 +1641,12 @@
       const players = Object.values(data.players || {});
       const isHost = state.isHost;
       const hasCustomWords = !!window._customWords;
+      const me = data.players?.[state.user?.uid];
+      const myVegIdx = VEGETABLES.indexOf(me?.veg || '🥕');
+      const myEmoIdx = EMOTIONS.indexOf(me?.emotion || '😊');
+      const selVegIdx = myVegIdx >= 0 ? myVegIdx : 0;
+      const selEmoIdx = myEmoIdx >= 0 ? myEmoIdx : 0;
+      const avatarOpen = state._avatarOpen;
 
       container.innerHTML = `
         <div class="max-w-3xl mx-auto">
@@ -1687,7 +1658,7 @@
             </div>
           </div>
 
-          <div class="glass-card p-6 mb-6">
+          <div class="glass-card p-6 mb-4">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
               ${isHost ? `<button id="btn-start" class="btn-mint px-6 py-2 text-lg font-bold">התחל משחק!</button>` : `<div class="font-bold" style="color:#8b7aaa">ממתין שהמארח יתחיל...</div>`}
@@ -1709,12 +1680,122 @@
             </div>
           </div>
 
+          <div class="glass-card p-4 mb-4">
+            <button id="btn-toggle-avatar" class="w-full flex items-center justify-between" style="cursor:pointer;background:none;border:none;color:inherit;padding:0">
+              <span class="font-bold text-white">🍳 מטבח האמוג'י — בנה את הדמות שלך</span>
+              <span id="avatar-arrow" style="transition:transform 0.2s;${avatarOpen ? 'transform:rotate(180deg)' : ''}">▼</span>
+            </button>
+            <div id="avatar-builder" class="mt-4" style="display:${avatarOpen ? '' : 'none'}">
+              <div class="flex items-center gap-4 mb-3">
+                <div class="avatar-preview" id="lobby-preview" style="position:relative;font-size:0;overflow:hidden;border-radius:12px">
+                  <img id="lobby-preview-img" src="${ekUrl(VEGETABLES[selVegIdx], EMOTIONS[selEmoIdx])}" onerror="this.style.display='none'" onload="this.style.opacity='1';var s=this.parentElement.querySelector('.af');if(s)s.style.opacity='0'" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;opacity:0;transition:opacity 0.3s">
+                  <span class="af" style="font-size:40px;line-height:80px;transition:opacity 0.3s">${VEGETABLES[selVegIdx]}${EMOTIONS[selEmoIdx]}</span>
+                </div>
+                <div class="flex-1 text-sm hint-text">
+                  בחר ירק + רגש, כולם יראו את הדמות החדשה שלך!
+                </div>
+              </div>
+              <div class="section-title mb-1" style="font-size:11px">ירק</div>
+              <div class="flex flex-wrap gap-1 mb-2" id="lobby-veg-selector">
+                ${VEGETABLES.map((v, i) => `
+                  <button class="avatar-option ${i === selVegIdx ? 'selected' : ''}" data-idx="${i}">${v}</button>
+                `).join('')}
+              </div>
+              <div class="section-title mb-1" style="font-size:11px">רגש</div>
+              <div class="flex flex-wrap gap-1 mb-2" id="lobby-emo-selector">
+                ${EMOTIONS.map((e, i) => `
+                  <button class="avatar-option ${i === selEmoIdx ? 'selected' : ''}" data-idx="${i}">${e}</button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
           <div class="glass-card-flat p-4 text-center">
             <p class="font-bold" style="color:#00e5a0">📱 שתף את קוד החדר עם החברים!</p>
             <p class="text-sm hint-text">כולם צריכים להזין את הקוד במכשיר שלהם</p>
           </div>
         </div>
       `;
+
+      updateAvatarPreviews(container);
+
+      function sparkleBurst(el) {
+        const rect = el.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        for (let i = 0; i < 12; i++) {
+          const s = document.createElement('div');
+          s.className = 'sparkle';
+          const angle = (i / 12) * Math.PI * 2;
+          const dist = 40 + Math.random() * 30;
+          s.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+          s.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+          s.style.left = cx + 'px';
+          s.style.top = cy + 'px';
+          s.style.position = 'fixed';
+          s.style.zIndex = '9999';
+          s.style.background = ['#00e5a0', '#ff6b6b', '#8b5cf6', '#ffd700'][Math.floor(Math.random() * 4)];
+          document.body.appendChild(s);
+          setTimeout(() => s.remove(), 600);
+        }
+      }
+
+      function updateLobbyAvatar() {
+        const veg = VEGETABLES[state._lobbyVeg ?? 0];
+        const emo = EMOTIONS[state._lobbyEmo ?? 0];
+        const img = $('#lobby-preview-img');
+        const fallback = $('#lobby-preview .af');
+        if (img) {
+          img.style.display = '';
+          img.style.opacity = '0';
+          img.src = ekUrl(veg, emo);
+        }
+        if (fallback) {
+          fallback.style.opacity = '1';
+          fallback.textContent = veg + emo;
+        }
+        sparkleBurst($('#lobby-preview'));
+        state.gameRef.update({
+          ['players.' + state.user.uid + '.veg']: veg,
+          ['players.' + state.user.uid + '.emotion']: emo,
+        });
+      }
+
+      $('#btn-toggle-avatar').addEventListener('click', () => {
+        const b = $('#avatar-builder');
+        const arrow = $('#avatar-arrow');
+        state._avatarOpen = b.style.display === 'none';
+        if (state._avatarOpen) {
+          b.style.display = '';
+          arrow.style.transform = 'rotate(180deg)';
+        } else {
+          b.style.display = 'none';
+          arrow.style.transform = '';
+        }
+      });
+
+      state._lobbyVeg = selVegIdx;
+      state._lobbyEmo = selEmoIdx;
+
+      $$('#lobby-veg-selector .avatar-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state._lobbyVeg = parseInt(btn.dataset.idx);
+          $$('#lobby-veg-selector .avatar-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          SOUND.poof();
+          updateLobbyAvatar();
+        });
+      });
+
+      $$('#lobby-emo-selector .avatar-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state._lobbyEmo = parseInt(btn.dataset.idx);
+          $$('#lobby-emo-selector .avatar-option').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          SOUND.poof();
+          updateLobbyAvatar();
+        });
+      });
 
       if (isHost) {
         $('#btn-start').addEventListener('click', () => { SOUND.start(); startGame(); });
@@ -1767,7 +1848,7 @@
 
           <div class="flex flex-wrap gap-1 mb-2">
             ${roomPlayers.map(p => `
-              <div class="flex items-center gap-1 border-2 border-black px-2 py-0.5 text-xs font-bold" style="background:#2a1452;color:#fff">
+              <div class="player-card" style="padding:4px 10px;gap:6px">
                 ${renderAvatar(p, 24)}
                 <span>${p.name}</span>
               </div>
@@ -1815,6 +1896,7 @@
           ` : ''}
         </div>
       `;
+      updateAvatarPreviews(container);
 
       const canvasEl = $('#draw-canvas');
       if (canvasEl) {
@@ -1929,7 +2011,8 @@
                     </div>
                     <div class="flex flex-wrap gap-1 mt-2">
                       ${roomPlayers.map(p => `
-                        <div class="flex items-center gap-1 border-2 border-black px-2 py-1 text-xs font-bold" style="background:#2a1452;color:#fff">
+                        <div class="player-card" style="padding:4px 10px;gap:6px">
+
                           ${renderAvatar(p, 28)}
                           <span>${p.name}</span>
                           ${p.id === data.hostId ? '<span class="host-badge" style="font-size:9px">מארח</span>' : ''}
@@ -1980,6 +2063,7 @@
           ` : ''}
         </div>
       `;
+      updateAvatarPreviews(container);
 
       // Render drawings on the canvases
       setTimeout(() => {
@@ -2091,6 +2175,7 @@
           `}
         </div>
       `;
+      updateAvatarPreviews(container);
 
       setTimeout(SOUND.reveal, 300);
 
@@ -2138,23 +2223,24 @@
 
           <div class="glass-card p-6">
             ${players.map((p, i) => `
-              <div class="flex items-center gap-3 py-3 stagger-in" style="animation-delay:${i*0.1}s;${i > 0 ? 'border-top:3px dashed #00e5a0' : ''}">
+              <div class="flex items-center gap-3 py-3 stagger-in" style="animation-delay:${i*0.1}s;${i > 0 ? 'border-top:2px dashed rgba(0,229,160,0.15)' : ''}">
                 <div class="text-2xl font-black w-10 text-center">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</div>
                 <div class="player-avatar" style="width:44px;height:44px">${renderAvatar(p, 44)}</div>
                 <div class="flex-1">
                   <div class="font-bold text-lg text-white">${p.name} ${p.id === data.hostId ? '(מארח)' : ''}</div>
                   <div class="text-sm hint-text">${p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'} | חדר ${(p.roomIndex ?? 0)+1}</div>
                 </div>
-                <div class="text-3xl font-black" style="color:${p.score === maxScore && p.score > 0 ? '#00e5a0' : '#8b5cf6'}">${p.score}</div>
+                <div class="text-3xl font-black" style="color:#00e5a0">${p.score || 0}</div>
               </div>
             `).join('')}
           </div>
 
-          <div class="mt-6 text-center">
-            <button id="btn-new-game" class="btn-mint px-8 py-4 text-xl font-bold">🎮 משחק חדש</button>
+          <div class="text-center mt-8">
+            <button id="btn-new-game" class="btn-mint px-8 py-4 text-xl font-bold">🔄 משחק חדש</button>
           </div>
         </div>
       `;
+      updateAvatarPreviews(container);
 
       const newBtn = $('#btn-new-game');
       if (newBtn) {
