@@ -1037,7 +1037,10 @@
 </head>
 
 <body>
-  <div id="app" class="min-h-screen p-4 max-w-6xl mx-auto"></div>
+  <nav id="topnav" style="position:fixed;top:0;left:0;right:0;height:52px;background:#fff;z-index:50;display:flex;align-items:center;padding:0 16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);direction:ltr">
+    <img src="logo.png" alt="Mobiground" style="height:32px;width:auto;display:block">
+  </nav>
+  <div id="app" class="min-h-screen p-4 max-w-6xl mx-auto" style="padding-top:68px"></div>
 
   <div id="rotate-overlay">
     <div class="phone-icon"></div>
@@ -2444,11 +2447,7 @@
       container.innerHTML = `
         <div class="min-h-screen flex items-center justify-center p-4">
           <div class="w-full max-w-md space-y-4">
-            <div class="glass-card p-6 text-center">
-              <img src="logo.png" alt="Mobiground" class="mx-auto" style="width:clamp(200px, 70%, 360px);height:auto;display:block">
-            </div>
-
-            <div class="glass-card p-6 space-y-4" id="join-card">
+            <div class="glass-card p-6 space-y-4 text-center" id="join-card">
               ${flow === 'code' ? `
                 <div>
                   <label class="section-title block mb-1">קוד חדר</label>
@@ -2600,10 +2599,6 @@
       if (isHost) {
         container.innerHTML = `
           <div class="max-w-3xl mx-auto">
-            <div class="text-center mb-6">
-              <img src="logo.png" alt="Mobiground" class="mx-auto mb-2" style="width:clamp(140px, 50%, 240px);height:auto;display:block">
-            </div>
-
             <div class="flex items-center justify-between mb-4">
               <div class="flex gap-2">
                 <button id="btn-open-config" class="btn-purple px-3 py-2 text-sm font-bold"><span class="material-symbols-rounded">settings</span> הגדרות</button>
@@ -2656,7 +2651,6 @@
         container.innerHTML = `
           <div class="max-w-md mx-auto text-center">
             <div class="glass-card p-6 mb-4">
-              <img src="logo.png" alt="Mobiground" class="mx-auto mb-1" style="width:clamp(100px, 50%, 180px);height:auto;display:block">
               <div class="section-title mb-2">הכינוי שלך</div>
               <div class="font-black text-white" style="font-size:5.625rem">${me?.name || '...'}</div>
               ${avatarSquareHTML}
@@ -3901,7 +3895,6 @@
         <div class="max-w-2xl mx-auto reveal-overlay">
           <div class="text-center mb-8">
             <h1 class="text-5xl font-black mb-2 text-white">🏆 לוח הניקוד</h1>
-            <img src="logo.png" alt="Mobiground" class="mx-auto mb-1" style="width:clamp(100px, 40%, 180px);height:auto;display:block">
           </div>
 
           <div class="glass-card p-6">
