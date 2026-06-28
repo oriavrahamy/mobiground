@@ -862,7 +862,7 @@
       border-radius: 16px;
       background: rgba(42, 20, 82, 0.4);
       border: 2px solid rgba(0, 229, 160, 0.2);
-      overflow: hidden;
+      overflow: visible;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -874,14 +874,14 @@
     }
     .avatar-edit-btn {
       position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 28px;
-      height: 28px;
+      top: -10px;
+      right: -10px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(0, 229, 160, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -891,7 +891,12 @@
       transition: background 0.15s;
     }
     .avatar-edit-btn:hover {
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.8);
+    }
+    .avatar-edit-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: #00e5a0;
     }
 
     .avatar-modal-options {
@@ -2254,7 +2259,7 @@
             </div>
 
             <div class="text-center mb-4">
-              <div class="text-lg font-bold" style="color:#00e5a0">${me?.name || ''}</div>
+              <div class="font-black" style="color:#00e5a0;font-size:3rem">${me?.name || ''}</div>
             </div>
 
             <div class="text-center mb-4">
@@ -2295,7 +2300,7 @@
             <div class="glass-card p-6 mb-4">
               <img src="logo.png" alt="כאוס גרפי" class="mx-auto mb-1" style="width:clamp(100px, 50%, 180px);height:auto;display:block">
               <div class="section-title mb-2">הכינוי שלך</div>
-              <div class="text-3xl font-black text-white mb-3">${me?.name || '...'}</div>
+              <div class="font-black text-white" style="font-size:5.625rem">${me?.name || '...'}</div>
               ${avatarSquareHTML}
             </div>
 
