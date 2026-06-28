@@ -321,35 +321,6 @@
       50% { transform: scale(1.08); }
     }
 
-    .drawing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    @media (min-width: 768px) {
-      .drawing-grid {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-
-    .exhibition-drawing {
-      border-radius: 14px;
-      border: 1px solid rgba(0, 229, 160, 0.15);
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2);
-      background: #fff;
-      overflow: hidden;
-    }
-
-    .exhibition-drawing .header {
-      background: linear-gradient(135deg, rgba(0, 229, 160, 0.9), rgba(0, 200, 138, 0.9));
-      color: #000;
-      font-weight: 700;
-      text-align: center;
-      padding: 6px;
-      font-size: 13px;
-    }
-
     .reveal-overlay {
       animation: fadeInScale 0.6s ease-out;
     }
@@ -430,34 +401,6 @@
       font-size: 11px;
       padding: 2px 10px;
       border-radius: 8px;
-    }
-
-    @media (max-width: 640px) {
-      .timer-ring {
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
-      }
-      .player-avatar {
-        width: 44px;
-        height: 44px;
-        font-size: 22px;
-      }
-      .drawing-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-      }
-    }
-
-    .vote-count {
-      background: rgba(0, 229, 160, 0.15);
-      color: #00e5a0;
-      font-weight: 700;
-      font-size: 12px;
-      padding: 0 8px;
-      min-width: 22px;
-      text-align: center;
-      border-radius: 6px;
     }
 
     canvas {
@@ -794,10 +737,6 @@
         height: 44px;
         font-size: 22px;
       }
-      .drawing-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-      }
     }
   </style>
 </head>
@@ -897,8 +836,12 @@
     const COLORS = ['#000000', '#FF0000', '#0000FF', '#00AA00', '#FFD700', '#800080', '#FF8C00', '#FF69B4'];
     const WIDTHS = [3, 6, 12];
     const DRAWING_DURATION = 45;
-    const PLAYERS_PER_ROOM = 5;
+    const PLAYER_COLORS = ['#e6194b','#3cb44b','#4363d8','#f58231','#911eb4','#42d4f4','#f032e6','#bfef45','#00e5a0','#800000','#9a6324'];
 
+    function playerColor(pid, playerOrder) {
+      const idx = playerOrder.indexOf(pid);
+      return PLAYER_COLORS[((idx % PLAYER_COLORS.length) + PLAYER_COLORS.length) % PLAYER_COLORS.length];
+    }
     const WORD_POOL = [
       { word: 'פיצה', category: 'מאכל' },
       { word: 'מטוס', category: 'כלי תחבורה' },
@@ -933,9 +876,6 @@
       gameData: null,
       currentScreen: 'join',
       isHost: false,
-      isDrawer: false,
-      myRoom: null,
-      interval: null,
       timerInterval: null,
       // drawing state
       drawing: {
@@ -948,8 +888,6 @@
         currentStroke: null,
         canvasId: null,
       },
-      revealStep: 0,
-      exhibitionCanvas: null,
     };
 
     // ============================================================
@@ -1093,7 +1031,6 @@
         avatar: avatar,
         veg: veg || '🥕',
         emotion: emotion || '😊',
-        roomIndex: null,
         isImpostor: false,
         word: '',
         category: '',
@@ -1107,11 +1044,9 @@
           [state.user.uid]: player
         },
         playerOrder: [state.user.uid],
-        rooms: [],
         votes: {},
         startedAt: firebase.firestore.FieldValue.serverTimestamp(),
         turnStartTime: null,
-        playersPerRoom: PLAYERS_PER_ROOM,
         drawingDuration: DRAWING_DURATION,
       };
 
@@ -1137,7 +1072,6 @@
         avatar: avatar,
         veg: veg || '🥕',
         emotion: emotion || '😊',
-        roomIndex: null,
         isImpostor: false,
         word: '',
         category: '',
@@ -1200,18 +1134,12 @@
     }
 
     let lastPhase = null;
-    let lastStrokesHash = null;
 
     function handleGameUpdate(data) {
-      const me = data.players?.[state.user?.uid];
-      if (me) {
-        state.myRoom = me.roomIndex;
-      }
       if (data.hostId === state.user?.uid) {
         state.isHost = true;
       }
       if (data.phase !== lastPhase) {
-        if (data.phase === 'reveal') state.revealStep = 0;
         if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
         if (window._drawWatch) { clearInterval(window._drawWatch); window._drawWatch = null; }
         lastPhase = data.phase;
@@ -1230,71 +1158,38 @@
       const data = state.gameData;
       const players = Object.values(data.players);
       console.log('startGame: players=', players.length);
-      if (players.length < 4) {
-        alert('צריך לפחות 4 שחקנים כדי להתחיל');
+      if (players.length < 3) {
+        alert('צריך לפחות 3 שחקנים כדי להתחיל');
         return;
       }
 
-      const roomSize = data.playersPerRoom || PLAYERS_PER_ROOM;
-      const shuffled = shuffle(players);
-      const numRooms = Math.max(1, Math.round(shuffled.length / roomSize));
-      const rooms = [];
-
-      // Distribute players evenly across rooms
-      const roomAllocations = [];
-      for (let i = 0; i < numRooms; i++) {
-        const start = Math.floor(i * shuffled.length / numRooms);
-        const end = Math.floor((i + 1) * shuffled.length / numRooms);
-        roomAllocations.push(shuffled.slice(start, end));
-      }
-
       const wordPool = window._customWords || WORD_POOL;
-
-      for (let i = 0; i < roomAllocations.length; i++) {
-        const roomPlayers = roomAllocations[i];
-        if (roomPlayers.length < 2) continue;
-        const wordEntry = wordPool[i % wordPool.length];
-        const impostorIdx = Math.floor(Math.random() * roomPlayers.length);
-
-        const room = {
-          index: i,
-          playerIds: roomPlayers.map(p => p.id),
-          word: wordEntry.word,
-          category: wordEntry.category,
-          impostorIndex: impostorIdx,
-          currentDrawerIndex: 0,
-          drawingState: 'drawing',
-          strokes: [],
-          turnStartTime: null,
-        };
-        rooms.push(room);
-      }
-
-      // build player updates
-      const playerUpdates = {};
-      for (const room of rooms) {
-        for (let j = 0; j < room.playerIds.length; j++) {
-          const pid = room.playerIds[j];
-          const isImp = j === room.impostorIndex;
-          const existing = data.players[pid];
-          playerUpdates[`players.${pid}.roomIndex`] = room.index;
-          playerUpdates[`players.${pid}.isImpostor`] = isImp;
-          playerUpdates[`players.${pid}.word`] = isImp ? room.category : room.word;
-          playerUpdates[`players.${pid}.category`] = room.category;
-        }
-      }
-
+      const shuffled = shuffle(players);
+      const wordEntry = wordPool[Math.floor(Math.random() * wordPool.length)];
+      const impostorIdx = Math.floor(Math.random() * shuffled.length);
+      const impostorId = shuffled[impostorIdx].id;
       const turnStart = Date.now();
+
+      const playerUpdates = {};
+      for (const p of players) {
+        playerUpdates[`players.${p.id}.isImpostor`] = p.id === impostorId;
+        playerUpdates[`players.${p.id}.word`] = p.id === impostorId ? wordEntry.category : wordEntry.word;
+        playerUpdates[`players.${p.id}.category`] = wordEntry.category;
+      }
+
       const updateData = {
         ...playerUpdates,
-        rooms: rooms.map(r => ({
-          ...r,
-          turnStartTime: turnStart,
-        })),
-        phase: 'drawing',
-        turnStartTime: turnStart,
-        drawingEndTime: turnStart + DRAWING_DURATION * 1000,
+        round: 0,
+        maxRounds: 3,
+        impostorId: impostorId,
+        word: wordEntry.word,
+        category: wordEntry.category,
+        strokes: [],
         votes: {},
+        phase: 'drawing',
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        drawingEndTime: turnStart + DRAWING_DURATION * 1000,
+        turnStartTime: turnStart,
       };
 
       try {
@@ -1309,7 +1204,7 @@
     // ============================================================
     // DRAWING - REAL-TIME COLLABORATIVE
     // ============================================================
-    function setupCollaborativeCanvas(canvasEl, roomIndex, existingStrokes) {
+    function setupCollaborativeCanvas(canvasEl, existingStrokes) {
       if (!canvasEl) return;
 
       const container = canvasEl.parentElement;
@@ -1328,7 +1223,7 @@
 
       state.drawing.canvas = canvasEl;
       state.drawing.ctx = ctx;
-      state.drawing.canvasId = `canvas-${roomIndex}-${Date.now()}`;
+      state.drawing.canvasId = `canvas-${Date.now()}`;
       state.drawing.strokes = existingStrokes ? JSON.parse(JSON.stringify(existingStrokes)) : [];
       state.drawing.currentStroke = null;
       state.drawing.isDrawing = false;
@@ -1404,10 +1299,10 @@
     }
 
     function saveStrokeRealtime(stroke) {
-      if (!state.gameData || state.myRoom === null) return;
+      if (!state.gameData) return;
       try {
         state.gameRef.update({
-          [`rooms.${state.myRoom}.strokes`]: firebase.firestore.FieldValue.arrayUnion(stroke),
+          strokes: firebase.firestore.FieldValue.arrayUnion(stroke),
         });
       } catch (e) {
         console.error('Save stroke error:', e);
@@ -1453,18 +1348,6 @@
       }
     }
 
-    function clearCanvas() {
-      if (!state.drawing.ctx || !state.drawing.canvas) return;
-      state.drawing.strokes = [];
-      const ctx = state.drawing.ctx;
-      const canvas = state.drawing.canvas;
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const h = canvas.height / (window.devicePixelRatio || 1);
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, w, h);
-    }
-
     // ============================================================
     // VOTING
     // ============================================================
@@ -1476,7 +1359,7 @@
     }
 
     function allVotesIn(data) {
-      const players = Object.values(data.players).filter(p => p.roomIndex !== null);
+      const players = Object.values(data.players);
       const voterIds = players.map(p => p.id);
       const votedIds = Object.keys(data.votes || {});
       return voterIds.every(id => votedIds.includes(id));
@@ -1484,34 +1367,28 @@
 
     async function advanceToReveal() {
       if (!state.isHost) return;
-      // Calculate scores
       const data = state.gameData;
-      const rooms = data.rooms;
+      const impostorId = data.impostorId;
       const votes = data.votes || {};
       const playerUpdates = {};
 
-      for (const room of rooms) {
-        const impostorId = room.playerIds[room.impostorIndex];
-        const roomVotes = Object.entries(votes)
-          .filter(([voterId]) => room.playerIds.includes(voterId))
-          .map(([voterId, targetId]) => ({ voterId, targetId }));
+      const allVotes = Object.entries(votes)
+        .map(([voterId, targetId]) => ({ voterId, targetId }));
+      const votesForImpostor = allVotes.filter(v => v.targetId === impostorId).length;
+      const totalVoters = allVotes.length;
+      const impostorCaught = votesForImpostor > totalVoters / 2;
 
-        const votesForImpostor = roomVotes.filter(v => v.targetId === impostorId).length;
-        const totalVoters = roomVotes.length;
-        const impostorCaught = votesForImpostor > totalVoters / 2;
-
-        for (const pid of room.playerIds) {
-          let scoreChange = 0;
-          if (pid === impostorId) {
-            scoreChange = impostorCaught ? 0 : 20;
-          } else {
-            const myVote = roomVotes.find(v => v.voterId === pid);
-            if (myVote && myVote.targetId === impostorId) {
-              scoreChange = 10;
-            }
+      for (const pid of Object.keys(data.players)) {
+        let scoreChange = 0;
+        if (pid === impostorId) {
+          scoreChange = impostorCaught ? 0 : 20;
+        } else {
+          const myVote = allVotes.find(v => v.voterId === pid);
+          if (myVote && myVote.targetId === impostorId) {
+            scoreChange = 10;
           }
-          playerUpdates[`players.${pid}.score`] = firebase.firestore.FieldValue.increment(scoreChange);
         }
+        playerUpdates[`players.${pid}.score`] = firebase.firestore.FieldValue.increment(scoreChange);
       }
 
       await state.gameRef.update({
@@ -1524,6 +1401,47 @@
       if (!state.isHost) return;
       await state.gameRef.update({
         phase: 'exhibition',
+      });
+    }
+
+    async function advanceToNextRound() {
+      if (!state.isHost) return;
+      const data = state.gameData;
+      const players = Object.values(data.players);
+      const nextRound = (data.round || 0) + 1;
+      const maxRounds = data.maxRounds || 3;
+
+      if (nextRound >= maxRounds) {
+        await state.gameRef.update({ phase: 'leaderboard' });
+        return;
+      }
+
+      // Pick different impostor from previous
+      const prevImpostorId = data.impostorId;
+      const candidates = players.filter(p => p.id !== prevImpostorId);
+      const newImpostor = candidates[Math.floor(Math.random() * candidates.length)];
+      const wordPool = window._customWords || WORD_POOL;
+      const wordEntry = wordPool[nextRound % wordPool.length];
+
+      const playerUpdates = {};
+      for (const p of players) {
+        playerUpdates[`players.${p.id}.isImpostor`] = p.id === newImpostor.id;
+        playerUpdates[`players.${p.id}.word`] = p.id === newImpostor.id ? wordEntry.category : wordEntry.word;
+        playerUpdates[`players.${p.id}.category`] = wordEntry.category;
+      }
+
+      const turnStart = Date.now();
+      await state.gameRef.update({
+        ...playerUpdates,
+        round: nextRound,
+        impostorId: newImpostor.id,
+        word: wordEntry.word,
+        category: wordEntry.category,
+        strokes: [],
+        votes: {},
+        phase: 'drawing',
+        drawingEndTime: turnStart + DRAWING_DURATION * 1000,
+        turnStartTime: turnStart,
       });
     }
 
@@ -1560,6 +1478,8 @@
     function renderJoin(container) {
       const flow = state._joinFlow || 'code';
       const code = state._verifiedCode || '';
+      const errEl = $('#join-error');
+      if (errEl) errEl.classList.add('hidden');
 
       container.innerHTML = `
         <div class="min-h-screen flex items-center justify-center p-4">
@@ -1698,7 +1618,8 @@
       SOUND.error();
       const el = $('#join-error');
       if (el) { el.textContent = msg;
-        el.classList.remove('hidden'); }
+        el.classList.remove('hidden');
+        setTimeout(() => el.classList.add('hidden'), 3000); }
     }
 
     // ---- LOBBY ----
@@ -1759,7 +1680,7 @@
             <div class="glass-card p-6 mb-4">
               <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
-                <button id="btn-start" class="btn-mint px-6 py-2 text-lg font-bold">התחל משחק!</button>
+                <button id="btn-start" class="btn-mint px-6 py-2 text-lg font-bold" ${players.length < 3 ? 'disabled' : ''}>התחל משחק!</button>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 stagger-in">
                 ${players.map(p => `
@@ -1776,6 +1697,7 @@
                 <input id="file-input" type="file" accept=".xlsx,.xls" style="display:none">
                 ${hasCustomWords ? `<span class="text-xs font-bold px-2 py-1" style="background:#00e5a0;color:#000">✅ מילים מותאמות</span>` : ''}
               </div>
+              ${players.length < 3 ? `<p class="mt-2 text-sm hint-text">נדרשים לפחות 3 שחקנים כדי להתחיל</p>` : ''}
             </div>
 
             ${avatarBuilderHTML}
@@ -1907,7 +1829,14 @@
       });
 
       if (isHost) {
-        $('#btn-start').addEventListener('click', () => { SOUND.start(); startGame(); });
+        $('#btn-start').addEventListener('click', () => {
+          const btn = $('#btn-start');
+          if (btn.disabled) return;
+          btn.disabled = true;
+          btn.classList.add('btn-loading');
+          SOUND.start();
+          startGame();
+        });
         $('#btn-export-words').addEventListener('click', exportWordTemplate);
         $('#btn-import-words').addEventListener('click', () => { $('#file-input').click(); });
         $('#file-input').addEventListener('change', e => {
@@ -1919,37 +1848,33 @@
     // ---- DRAWING (COLLABORATIVE) ----
     function renderDrawing(container, data) {
       const me = data.players?.[state.user?.uid];
-      if (!me || me.roomIndex === null || me.roomIndex === undefined) {
-        container.innerHTML = `<div class="text-center p-8"><div class="glass-card bg-red-300 p-6 font-bold text-xl">אירעה שגיאה - לא שובצת לחדר</div></div>`;
-        return;
-      }
-
-      const room = data.rooms[me.roomIndex];
-      if (!room) {
-        container.innerHTML = `<div class="text-center p-8"><div class="glass-card bg-red-300 p-6 font-bold text-xl">אירעה שגיאה - החדר לא נמצא</div></div>`;
+      if (!me) {
+        container.innerHTML = `<div class="text-center p-8"><div class="glass-card bg-red-300 p-6 font-bold text-xl">אירעה שגיאה - לא שובצת למשחק</div></div>`;
         return;
       }
 
       if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
       if (window._drawWatch) { clearInterval(window._drawWatch); window._drawWatch = null; }
 
-      const roomPlayers = room.playerIds.map(pid => data.players[pid]).filter(Boolean);
+      const allPlayers = Object.values(data.players);
       const endTime = data.drawingEndTime || (Date.now() + DRAWING_DURATION * 1000);
       const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      const roundNum = (data.round || 0) + 1;
+      const maxRounds = data.maxRounds || 3;
 
       container.innerHTML = `
         <div class="max-w-lg mx-auto">
           <div class="flex items-center justify-between mb-2">
-            <div class="room-label">חדר ${me.roomIndex + 1}</div>
+            <div class="room-label">סיבוב ${roundNum}/${maxRounds}</div>
             <div class="flex items-center gap-2">
-              <span class="font-bold text-sm">${roomPlayers.length} שחקנים</span>
+              <span class="font-bold text-sm">${allPlayers.length} שחקנים</span>
               <div id="drawing-timer" class="timer-ring ${remaining <= 5 ? 'urgent' : ''}">${remaining}</div>
             </div>
           </div>
 
           <div class="flex flex-wrap gap-1 mb-2">
-            ${roomPlayers.map(p => `
-              <div class="player-card" style="padding:4px 10px;gap:6px">
+            ${allPlayers.map(p => `
+              <div class="player-card" style="padding:4px 10px;gap:6px;border-right:4px solid ${playerColor(p.id, data.playerOrder || allPlayers.map(pl => pl.id))}">
                 ${renderAvatar(p, 24)}
                 <span>${p.name}</span>
               </div>
@@ -2002,7 +1927,7 @@
       const canvasEl = $('#draw-canvas');
       if (canvasEl) {
         if (canvasEl._cleanup) canvasEl._cleanup();
-        setupCollaborativeCanvas(canvasEl, me.roomIndex, room.strokes || []);
+        setupCollaborativeCanvas(canvasEl, data.strokes || []);
 
         $$('.color-btn').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -2022,10 +1947,8 @@
 
         const clearBtn = $('#btn-clear-local');
         if (clearBtn) clearBtn.addEventListener('click', () => {
-          if (!state.gameData || state.myRoom === null) return;
-          const roomStrokes = state.gameData.rooms[state.myRoom]?.strokes || [];
-          const otherStrokes = roomStrokes.filter(s => s.playerId !== state.user.uid);
-          state.drawing.strokes = JSON.parse(JSON.stringify(otherStrokes));
+          const allStrokes = (state.gameData?.strokes || []).filter(s => s.playerId !== state.user.uid);
+          state.drawing.strokes = JSON.parse(JSON.stringify(allStrokes));
           const canvas = state.drawing.canvas;
           if (canvas) {
             const dpr = window.devicePixelRatio || 1;
@@ -2039,22 +1962,19 @@
       // Poll for new strokes from other players
       if (window._drawWatch) clearInterval(window._drawWatch);
       window._drawWatch = setInterval(() => {
-        if (!state.gameData || state.myRoom === null) return;
-        const r = state.gameData.rooms[state.myRoom];
-        if (!r) return;
+        if (!state.gameData) return;
+        const allStrokes = state.gameData.strokes || [];
         const canvas = $('#draw-canvas');
         if (!canvas || !state.drawing.ctx) return;
         if (state.drawing.isDrawing) return;
-        if (r.strokes && r.strokes.length > 0) {
-          const allStrokes = r.strokes;
-          const localStrokes = state.drawing.strokes;
-          if (allStrokes.length > localStrokes.length) {
-            state.drawing.strokes = JSON.parse(JSON.stringify(allStrokes));
-            const dpr = window.devicePixelRatio || 1;
-            const w = canvas.width / dpr;
-            const h = canvas.height / dpr;
-            redrawCanvas(state.drawing.ctx, w, h, state.drawing.strokes);
-          }
+        const localStrokes = state.drawing.strokes;
+        const otherStrokes = allStrokes.filter(s => s.playerId !== state.user?.uid);
+        if (otherStrokes.length !== localStrokes.filter(s => s.playerId !== state.user?.uid).length) {
+          state.drawing.strokes = JSON.parse(JSON.stringify(allStrokes));
+          const dpr = window.devicePixelRatio || 1;
+          const w = canvas.width / dpr;
+          const h = canvas.height / dpr;
+          redrawCanvas(state.drawing.ctx, w, h, state.drawing.strokes);
         }
       }, 400);
 
@@ -2071,6 +1991,9 @@
           if (r <= 0 && state.isHost) {
             clearInterval(state.timerInterval);
             state.timerInterval = null;
+            if (state.gameData?.phase === 'drawing') {
+              state.gameRef.update({ phase: 'exhibition' });
+            }
           }
         }, 200);
       }
@@ -2085,80 +2008,63 @@
 
     // ---- EXHIBITION ----
     function renderExhibition(container, data) {
-      const rooms = data.rooms || [];
       const me = data.players?.[state.user?.uid];
-      const myRoomIndex = me?.roomIndex;
-
-      // Check if user has voted
       const hasVoted = data.votes && data.votes[state.user?.uid];
+      const allPlayers = Object.values(data.players);
+      const playerOrder = data.playerOrder || allPlayers.map(p => p.id);
+      const roundNum = (data.round || 0) + 1;
+      const maxRounds = data.maxRounds || 3;
 
       container.innerHTML = `
-        <div class="max-w-5xl mx-auto">
+        <div class="max-w-3xl mx-auto">
           <div class="text-center mb-6">
             <h1 class="text-4xl font-black mb-2 text-white">🖼️ תערוכת הכאוס</h1>
-            <p class="font-bold text-lg" style="color:#00e5a0">כל הציורים לפניך! הצבע על המתחזה בחדר שלך</p>
+            <p class="font-bold text-lg" style="color:#00e5a0">סיבוב ${roundNum}/${maxRounds} — מי לדעתך המתחזה?</p>
           </div>
 
-          <div class="drawing-grid stagger-in">
-            ${rooms.map((room, ri) => {
-              const roomPlayers = room.playerIds.map(pid => data.players[pid]).filter(Boolean);
-              const canvasId = `exh-canvas-${ri}`;
-              return `
-                <div class="exhibition-drawing">
-                  <div class="header">חדר ${ri+1}</div>
-                  <div class="p-2">
-                    <div style="aspect-ratio:4/3;background:#fff;position:relative">
-                      <canvas id="${canvasId}" style="width:100%;height:100%"></canvas>
-                    </div>
-                    <div class="flex flex-wrap gap-1 mt-2">
-                      ${roomPlayers.map(p => `
-                        <div class="player-card" style="padding:4px 10px;gap:6px">
-
-                          ${renderAvatar(p, 28)}
-                          <span>${p.name}</span>
-                          ${p.id === data.hostId ? '<span class="host-badge" style="font-size:9px">מארח</span>' : ''}
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
+          <div class="glass-card p-4 mb-4">
+            <div style="aspect-ratio:4/3;max-height:50vh;background:#fff;position:relative">
+              <canvas id="exh-canvas-main" style="width:100%;height:100%"></canvas>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3 justify-center">
+              ${allPlayers.map(p => `
+                <div class="player-card" style="padding:4px 10px;gap:6px;border-right:4px solid ${playerColor(p.id, playerOrder)}">
+                  <div class="player-avatar" style="width:28px;height:28px;font-size:14px">${renderAvatar(p, 28)}</div>
+                  <span class="font-bold text-xs">${p.name}</span>
                 </div>
-              `;
-            }).join('')}
+              `).join('')}
+            </div>
           </div>
 
-          ${!hasVoted && myRoomIndex !== null && myRoomIndex !== undefined ? `
-            <div id="vote-section" class="mt-6 glass-card p-6">
-              <h2 class="text-xl font-black mb-3 text-white">🗳️ הצבע על המתחזה בחדר ${myRoomIndex+1}</h2>
-              <p class="text-sm font-bold mb-3 hint-text">מי לדעתך הוא המתחזה?</p>
+          ${!hasVoted ? `
+            <div id="vote-section" class="glass-card p-6">
+              <h2 class="text-xl font-black mb-3 text-white">🗳️ הצבע על המתחזה</h2>
+              <p class="text-sm font-bold mb-3 hint-text">מי לדעתך הוא המתחזה בסיבוב הזה?</p>
               <div class="flex flex-wrap gap-3">
-                ${(data.rooms[myRoomIndex]?.playerIds || [])
-                  .filter(pid => pid !== state.user?.uid)
-                  .map(pid => {
-                    const p = data.players[pid];
-                    if (!p) return '';
-                    return `
-                      <button class="vote-player-btn btn-mint px-4 py-3 flex items-center gap-2" data-target="${pid}">
-                        ${renderAvatar(p, 36)}
-                        <span class="font-bold">${p.name}</span>
-                      </button>
-                    `;
-                  }).join('')}
+                ${allPlayers
+                  .filter(p => p.id !== state.user?.uid)
+                  .map(p => `
+                    <button class="vote-player-btn btn-mint px-4 py-3 flex items-center gap-2" data-target="${p.id}">
+                      ${renderAvatar(p, 36)}
+                      <span class="font-bold">${p.name}</span>
+                    </button>
+                  `).join('')}
               </div>
             </div>
-          ` : hasVoted ? `
-            <div class="mt-6 glass-card-flat p-4 text-center" style="background:#00e5a0;color:#000">
-              <p class="font-bold text-lg">✅ הצבעת! ממתין לשאר השחקנים...</p>
+          ` : `
+            <div class="glass-card-flat p-4 text-center" style="background:rgba(0,229,160,0.1);border-color:rgba(0,229,160,0.2)">
+              <p class="font-bold text-lg" style="color:#00e5a0">✅ הצבעת! ממתין לשאר השחקנים...</p>
             </div>
-          ` : ''}
+          `}
 
           ${state.isHost && allVotesIn(data) ? `
-            <div class="mt-6 text-center">
-              <button id="btn-to-reveal" class="btn-mint px-8 py-4 text-xl font-bold">🔍 גלו את המתחזים!</button>
+            <div class="mt-4 text-center">
+              <button id="btn-to-reveal" class="btn-mint px-8 py-4 text-xl font-bold">🔍 גלו את המתחזה!</button>
             </div>
           ` : state.isHost ? `
-            <div class="mt-6 text-center">
+            <div class="mt-4 text-center">
               <div class="glass-card-flat p-4 font-bold">
-                ממתין להצבעות... (${Object.keys(data.votes || {}).length}/${Object.values(data.players).filter(p => p.roomIndex !== null).length})
+                ממתין להצבעות... (${Object.keys(data.votes || {}).length}/${allPlayers.length})
               </div>
             </div>
           ` : ''}
@@ -2166,26 +2072,40 @@
       `;
       updateAvatarPreviews(container);
 
-      // Render drawings on the canvases
+      // Render drawing with player-colored strokes
       setTimeout(() => {
-        rooms.forEach((room, ri) => {
-          const canvasEl = document.getElementById(`exh-canvas-${ri}`);
-          if (!canvasEl) return;
-          const container_ = canvasEl.parentElement;
-          const dpr = window.devicePixelRatio || 1;
-          const w = container_.clientWidth;
-          const h = container_.clientHeight;
-          canvasEl.width = w * dpr;
-          canvasEl.height = h * dpr;
-          canvasEl.style.width = w + 'px';
-          canvasEl.style.height = h + 'px';
-          const ctx = canvasEl.getContext('2d');
-          ctx.scale(dpr, dpr);
-          redrawCanvas(ctx, w, h, room.strokes || []);
-        });
+        const canvasEl = document.getElementById('exh-canvas-main');
+        if (!canvasEl) return;
+        const container_ = canvasEl.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        const w = container_.clientWidth;
+        const h = container_.clientHeight;
+        canvasEl.width = w * dpr;
+        canvasEl.height = h * dpr;
+        canvasEl.style.width = w + 'px';
+        canvasEl.style.height = h + 'px';
+        const ctx = canvasEl.getContext('2d');
+        ctx.scale(dpr, dpr);
+        const strokes = data.strokes || [];
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        for (const s of strokes) {
+          if (!s.points || s.points.length < 2) continue;
+          const pColor = playerColor(s.playerId, playerOrder);
+          ctx.beginPath();
+          ctx.moveTo(s.points[0].x, s.points[0].y);
+          for (let i = 1; i < s.points.length; i++) {
+            ctx.lineTo(s.points[i].x, s.points[i].y);
+          }
+          ctx.strokeStyle = pColor;
+          ctx.lineWidth = s.width || 3;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
       }, 50);
 
-      // Vote buttons
       $$('.vote-player-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
           SOUND.vote();
@@ -2196,66 +2116,58 @@
         });
       });
 
-      // Advance to reveal
       const revealBtn = $('#btn-to-reveal');
       if (revealBtn) revealBtn.addEventListener('click', () => { SOUND.click(); advanceToReveal(); });
     }
 
     // ---- REVEAL ----
     function renderReveal(container, data) {
-      const rooms = data.rooms || [];
-      const me = data.players?.[state.user?.uid];
-
-      if (!state.revealStep) state.revealStep = 0;
-
-      // If all rooms revealed, show leaderboard
-      if (state.revealStep >= rooms.length) {
-        renderLeaderboard(container, data);
-        return;
-      }
-
-      const room = rooms[state.revealStep];
-      const impostorId = room.playerIds[room.impostorIndex];
+      const impostorId = data.impostorId;
       const impostor = data.players[impostorId];
-      const roomPlayers = room.playerIds.map(pid => data.players[pid]).filter(Boolean);
+      const allPlayers = Object.values(data.players);
+      const playerOrder = data.playerOrder || allPlayers.map(p => p.id);
       const votes = Object.entries(data.votes || {})
-        .filter(([voterId]) => room.playerIds.includes(voterId))
         .map(([voterId, targetId]) => ({ voterId, targetId }));
-
       const votesForImpostor = votes.filter(v => v.targetId === impostorId).length;
       const totalVoters = votes.length;
       const impostorCaught = votesForImpostor > totalVoters / 2;
+      const roundNum = (data.round || 0) + 1;
+      const maxRounds = data.maxRounds || 3;
+      const isLastRound = (data.round || 0) >= maxRounds - 1;
 
       container.innerHTML = `
         <div class="max-w-3xl mx-auto reveal-overlay">
-          <div class="text-center mb-6">
-            <h1 class="text-4xl font-black mb-2" style="color:#00e5a0">🔍 חשיפה! חדר ${state.revealStep+1}</h1>
+          <div class="text-center mb-4">
+            <h1 class="text-4xl font-black mb-2" style="color:#00e5a0">🔍 חשיפה! סיבוב ${roundNum}</h1>
+            <p class="font-bold" style="color:#8b7aaa">המילה הייתה: <span style="color:#00e5a0">${data.word}</span></p>
           </div>
 
-          <div class="glass-card p-6 mb-6" style="position:relative">
+          <div class="glass-card p-6 mb-4" style="position:relative">
             <div style="aspect-ratio:4/3;max-height:40vh;background:#fff" class="mb-4">
               <canvas id="reveal-canvas" style="width:100%;height:100%"></canvas>
             </div>
 
             <div class="flex flex-wrap gap-2 mb-4 justify-center">
-              ${roomPlayers.map(p => `
+              ${allPlayers.map(p => {
+                const voteInfo = votes.find(v => v.voterId === p.id);
+                return `
                 <div class="player-card ${p.id === impostorId ? 'shock' : ''}" style="${p.id === impostorId ? 'border-color:#ff6b6b;background:#2a1452;position:relative' : ''}">
                   <div class="player-avatar" style="width:40px;height:40px">${renderAvatar(p, 40)}</div>
                   <span class="font-bold">${p.name}</span>
                   ${p.id === impostorId ? '<span class="impostor-badge">⚡ מִתְחַזֶה ⚡</span>' : ''}
-                  ${(votes.find(v => v.voterId === p.id)?.targetId) ? `
-                    <span class="text-xs font-bold mr-1">
-                      → ${data.players[votes.find(v => v.voterId === p.id).targetId]?.name || '?'}
+                  ${voteInfo ? `
+                    <span class="text-xs font-bold" style="${voteInfo.targetId === impostorId ? 'color:#00e5a0' : '#ff6b6b'}">
+                      → ${data.players[voteInfo.targetId]?.name || '?'}
+                      ${voteInfo.targetId === impostorId ? '✅' : '❌'}
                     </span>
                   ` : ''}
-                  ${(votes.find(v => v.voterId === p.id)?.targetId === impostorId) ? '✅' : (votes.find(v => v.voterId === p.id) ? '❌' : '')}
                   ${p.id === impostorId ? '<div class="shock-overlay"></div>' : ''}
-                </div>
-              `).join('')}
+                </div>`;
+              }).join('')}
             </div>
 
-            <div class="glass-card-flat p-4 text-center mb-4" style="background:${impostorCaught ? '#00e5a0' : '#ff6b6b'};color:#000">
-              <p class="text-xl font-black">
+            <div class="glass-card-flat p-4 text-center" style="background:${impostorCaught ? 'rgba(0,229,160,0.15)' : 'rgba(255,107,107,0.15)'};border-color:${impostorCaught ? '#00e5a0' : '#ff6b6b'}">
+              <p class="text-xl font-black" style="color:${impostorCaught ? '#00e5a0' : '#ff6b6b'}">
                 ${impostorCaught
                   ? `⚡ ${impostor?.name || 'המתחזה'} נתפס! (${votesForImpostor}/${totalVoters} הצביעו נכון)`
                   : `🏃 ${impostor?.name || 'המתחזה'} הצליח לברוח! (רק ${votesForImpostor}/${totalVoters} זיהו אותו)`}
@@ -2265,8 +2177,8 @@
 
           ${state.isHost ? `
             <div class="text-center">
-              <button id="btn-next-reveal" class="btn-mint px-8 py-3 text-xl font-bold">
-                ${state.revealStep < rooms.length - 1 ? 'הבא →' : '🏆 לוח הניקוד'}
+              <button id="btn-next-phase" class="btn-mint px-8 py-3 text-xl font-bold">
+                ${isLastRound ? '🏆 לוח הניקוד' : 'הסיבוב הבא →'}
               </button>
             </div>
           ` : `
@@ -2280,7 +2192,6 @@
 
       setTimeout(SOUND.reveal, 300);
 
-      // Draw on canvas
       setTimeout(() => {
         const canvasEl = $('#reveal-canvas');
         if (!canvasEl) return;
@@ -2294,18 +2205,36 @@
         canvasEl.style.height = h + 'px';
         const ctx = canvasEl.getContext('2d');
         ctx.scale(dpr, dpr);
-        redrawCanvas(ctx, w, h, room.strokes || []);
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        const strokes = data.strokes || [];
+        for (const s of strokes) {
+          if (!s.points || s.points.length < 2) continue;
+          const pColor = playerColor(s.playerId, playerOrder);
+          ctx.beginPath();
+          ctx.moveTo(s.points[0].x, s.points[0].y);
+          for (let i = 1; i < s.points.length; i++) {
+            ctx.lineTo(s.points[i].x, s.points[i].y);
+          }
+          ctx.strokeStyle = pColor;
+          ctx.lineWidth = s.width || 3;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
       }, 50);
 
-      const nextBtn = $('#btn-next-reveal');
+      const nextBtn = $('#btn-next-phase');
       if (nextBtn) {
         nextBtn.addEventListener('click', () => {
           SOUND.click();
-          state.revealStep++;
-          render();
-          if (state.revealStep >= rooms.length) {
+          if (isLastRound) {
             spawnConfetti();
             setTimeout(SOUND.win, 300);
+            state.gameRef.update({ phase: 'leaderboard' });
+          } else {
+            advanceToNextRound();
           }
         });
       }
@@ -2329,7 +2258,7 @@
                 <div class="player-avatar" style="width:44px;height:44px">${renderAvatar(p, 44)}</div>
                 <div class="flex-1">
                   <div class="font-bold text-lg text-white">${p.name} ${p.id === data.hostId ? '(מארח)' : ''}</div>
-                  <div class="text-sm hint-text">${p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'} | חדר ${(p.roomIndex ?? 0)+1}</div>
+                  <div class="text-sm hint-text">${p.isImpostor ? '⚡ היה מתחזה' : '🎨 היה צייר'}</div>
                 </div>
                 <div class="text-3xl font-black" style="color:#00e5a0">${p.score || 0}</div>
               </div>
@@ -2366,7 +2295,6 @@
       state.gameRef = null;
       state.gameData = null;
       state.isHost = false;
-      state.myRoom = null;
       state.drawing = {
         canvas: null,
         ctx: null,
@@ -2377,7 +2305,6 @@
         currentStroke: null,
         canvasId: null,
       };
-      state.revealStep = 0;
     }
 
     // ============================================================
@@ -2392,7 +2319,6 @@
         el.style.background = pick(colors);
         el.style.width = (6 + Math.random() * 10) + 'px';
         el.style.height = (6 + Math.random() * 10) + 'px';
-        el.style.border = '2px solid #000';
         el.style.animationDuration = (2 + Math.random() * 3) + 's';
         el.style.animationDelay = Math.random() * 2 + 's';
         document.body.appendChild(el);
@@ -2405,11 +2331,11 @@
     // ============================================================
     render();
 
-    // Check URL params for room code
+    // Check URL params for game code
     const params = new URLSearchParams(window.location.search);
-    if (params.has('room')) {
+    if (params.has('room') || params.has('code')) {
       const codeInput = document.getElementById('join-code');
-      if (codeInput) codeInput.value = params.get('room').toUpperCase();
+      if (codeInput) codeInput.value = (params.get('room') || params.get('code')).toUpperCase();
     }
 
     console.log('🎨 כאוס גרפי loaded!');
