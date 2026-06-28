@@ -936,6 +936,23 @@
       color: #00e5a0;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
+
+    .am-puff {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      z-index: 3;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(0,229,160,0.35) 0%, rgba(139,92,246,0.25) 40%, transparent 70%);
+      animation: puffFade 0.35s ease-out forwards;
+    }
+    @keyframes puffFade {
+      0% { opacity: 1; transform: scale(0.6); }
+      100% { opacity: 0; transform: scale(1.4); }
+    }
+    #am-preview {
+      position: relative;
+    }
   </style>
 </head>
 
@@ -1266,6 +1283,10 @@
       if (preview) {
         preview.innerHTML = renderAvatar({ veg, emotion: emo }, 100);
         updateAvatarPreviews(preview);
+        const puff = document.createElement('div');
+        puff.className = 'am-puff';
+        preview.appendChild(puff);
+        setTimeout(() => puff.remove(), 350);
       }
       const tab = state._modalTab || 'veg';
       const items = tab === 'veg' ? VEGETABLES : EMOTIONS;
