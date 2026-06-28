@@ -953,6 +953,63 @@
     #am-preview {
       position: relative;
     }
+
+    .players-drawer {
+      position: fixed;
+      top: 0;
+      right: -340px;
+      width: 320px;
+      height: 100vh;
+      z-index: 99990;
+      background: rgba(15, 4, 36, 0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-left: 1px solid rgba(0, 229, 160, 0.15);
+      padding: 24px 20px;
+      overflow-y: auto;
+      transition: right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: -8px 0 40px rgba(0,0,0,0.4);
+    }
+    .players-drawer.open {
+      right: 0;
+    }
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99989;
+      background: rgba(0,0,0,0.4);
+      display: none;
+    }
+    .drawer-overlay.open {
+      display: block;
+    }
+    .drawer-toggle {
+      background: rgba(0, 229, 160, 0.1);
+      border: 1px solid rgba(0, 229, 160, 0.2);
+      border-radius: 12px;
+      color: #00e5a0;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 8px 12px;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .drawer-toggle:hover {
+      background: rgba(0, 229, 160, 0.2);
+    }
+    .drawer-close {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.4);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .drawer-close:hover {
+      color: #fff;
+    }
   </style>
 </head>
 
@@ -1211,9 +1268,8 @@
     // UTILITY
     // ============================================================
     function randomCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
       let r = '';
-      for (let i = 0; i < 4; i++) r += chars[Math.floor(Math.random() * chars.length)];
+      for (let i = 0; i < 4; i++) r += Math.floor(Math.random() * 10);
       return r;
     }
 
@@ -2012,7 +2068,7 @@
                 <div>
                   <label class="section-title block mb-1">קוד חדר</label>
                   <div class="flex gap-2">
-                    <input id="join-code" class="inp flex-1 p-3 text-lg font-bold text-center tracking-widest uppercase" placeholder="ABCD" maxlength="4" style="letter-spacing:4px">
+                    <input id="join-code" class="inp flex-1 p-3 text-lg font-bold text-center tracking-widest" placeholder="0000" maxlength="4" style="letter-spacing:4px" inputmode="numeric" pattern="[0-9]*">
                     <button id="btn-verify" class="btn-purple px-6 py-3 text-lg font-bold">הצטרף</button>
                   </div>
                 </div>
@@ -2058,8 +2114,8 @@
         });
 
         verifyBtn.addEventListener('click', async () => {
-          const code = codeInput.value.trim().toUpperCase();
-          if (!code || code.length !== 4) { showError('נא להזין קוד חדר תקין (4 אותיות)'); return; }
+          const code = codeInput.value.trim();
+          if (!code || code.length !== 4 || !/^\d{4}$/.test(code)) { showError('נא להזין קוד חדר תקין (4 ספרות)'); return; }
           verifyBtn.disabled = true; verifyBtn.classList.add('btn-loading');
           try {
             await ensureAuth();
@@ -2157,47 +2213,57 @@
       `;
 
       if (isHost) {
-        const gm = GAME_MODES.find(m => m.id === (data.gameMode || DEFAULT_GAME_MODE));
         container.innerHTML = `
           <div class="max-w-3xl mx-auto">
             <div class="text-center mb-6">
               <img src="logo.png" alt="כאוס גרפי" class="mx-auto mb-2" style="width:clamp(140px, 50%, 240px);height:auto;display:block">
-              <div class="glass-card-flat inline-block px-6 py-2">
-                <span class="font-bold">קוד חדר:</span>
-                <span class="text-2xl font-black tracking-widest ml-2" style="color:#00e5a0">${state.gameId}</span>
+            </div>
+
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex gap-2">
+                <button id="btn-open-config" class="btn-purple px-3 py-2 text-sm font-bold">⚙️ הגדרות</button>
+                <button id="btn-start" class="btn-mint px-5 py-2 text-lg font-bold" ${players.length < 3 ? 'disabled' : ''}>התחל משחק!</button>
+                <button id="btn-toggle-drawer" class="drawer-toggle">👥 ${players.length}</button>
+              </div>
+              <div class="glass-card-flat inline-block px-5 py-2">
+                <span class="font-bold">קוד:</span>
+                <span class="text-2xl font-black tracking-widest ml-2" style="color:#00e5a0;direction:ltr;display:inline-block">${state.gameId}</span>
               </div>
             </div>
 
-            <div class="glass-card p-6 mb-4">
-              <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
-                <div class="flex gap-2">
-                  <button id="btn-open-config" class="btn-purple px-3 py-2 text-sm font-bold">⚙️ הגדרות</button>
-                  <button id="btn-start" class="btn-mint px-6 py-2 text-lg font-bold" ${players.length < 3 ? 'disabled' : ''}>התחל משחק!</button>
-                </div>
-              </div>
-
-
-
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 stagger-in">
-                ${players.map(p => `
-                  <div class="player-card">
-                    <div class="player-avatar">${renderAvatar(p)}</div>
-                    <span class="font-bold text-sm truncate">${p.name}</span>
-                    ${p.id === data.hostId ? '<span class="host-badge mr-auto">מארח</span>' : ''}
-                  </div>
-                `).join('')}
-              </div>
-              ${players.length < 3 ? `<p class="mt-2 text-sm hint-text">נדרשים לפחות 3 שחקנים כדי להתחיל</p>` : ''}
+            <div class="text-center mb-4">
+              <div class="text-lg font-bold" style="color:#00e5a0">${me?.name || ''}</div>
             </div>
 
-            ${avatarSquareHTML}
+            <div class="text-center mb-4">
+              ${avatarSquareHTML}
+            </div>
 
             <div class="glass-card-flat p-4 text-center">
               <p class="font-bold" style="color:#00e5a0">📱 שתף את קוד החדר עם החברים!</p>
               <p class="text-sm hint-text">כולם צריכים להזין את הקוד במכשיר שלהם</p>
             </div>
             <div class="text-center mt-8 text-xs" style="color:#6b5b8a">נוצר על ידי אורי אברהם ישרזדה</div>
+          </div>
+
+          <div class="drawer-overlay" id="drawer-overlay"></div>
+          <div class="players-drawer" id="players-drawer">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-black text-white">שחקנים (${players.length})</h2>
+              <button id="btn-close-drawer" class="drawer-close">✕</button>
+            </div>
+            <div class="flex flex-col gap-3 stagger-in">
+              ${players.map(p => `
+                <div class="player-card" style="padding:10px">
+                  <div class="player-avatar">${renderAvatar(p)}</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-sm truncate">${p.name}</div>
+                    <div class="text-xs hint-text">${p.id === data.hostId ? '👑 מארח' : '🎮 שחקן'}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            ${players.length < 3 ? `<p class="mt-3 text-sm hint-text text-center">נדרשים לפחות 3 שחקנים כדי להתחיל</p>` : ''}
           </div>
         `;
       } else {
@@ -2229,6 +2295,13 @@
         updateAvatarPreviews(sq);
       }
 
+      // Restore drawer state
+      if (isHost && state._drawerOpen) {
+        const d = $('#players-drawer');
+        const o = $('#drawer-overlay');
+        if (d && o) { d.classList.add('open'); o.classList.add('open'); }
+      }
+
       // Avatar modal open
       const openBtn = $('#btn-open-avatar');
       if (openBtn) {
@@ -2251,6 +2324,19 @@
           SOUND.start();
           startGame();
         });
+
+        $('#btn-toggle-drawer').addEventListener('click', () => {
+          state._drawerOpen = true;
+          $('#players-drawer').classList.add('open');
+          $('#drawer-overlay').classList.add('open');
+        });
+        $('#btn-close-drawer').addEventListener('click', closeDrawer);
+        $('#drawer-overlay').addEventListener('click', closeDrawer);
+        function closeDrawer() {
+          state._drawerOpen = false;
+          $('#players-drawer').classList.remove('open');
+          $('#drawer-overlay').classList.remove('open');
+        }
 
         // Modal open/close
         $('#btn-open-config').addEventListener('click', () => {
