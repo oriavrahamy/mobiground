@@ -1199,8 +1199,8 @@
     // CONSTANTS
     // ============================================================
     const AVATARS = ['🦊', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄', '🐧', '🐰', '🦉', '🐺', '🐙', '🦋', '🐞', '🐳'];
-    const VEGETABLES = ['🥕', '🍅', '🥦', '🌽', '🫑', '🥬', '🧅', '🥒', '🍆', '🥔', '🧄', '🫒', '🍄', '🥝', '🍑'];
-    const EMOTIONS = ['😊', '😡', '🥱', '😱', '😍', '😎', '🤔', '😭', '🤩', '😈', '🥺', '😴', '🤯', '🥳', '👻'];
+    const VEGETABLES = ['🥕', '🍅', '🥦', '🌽', '🫑', '🥬', '🧅', '🥒', '🥔', '🧄', '🍄', '🥝'];
+    const EMOTIONS = ['😊', '😡', '🥱', '😱', '😎', '🤔', '😭', '🤩', '😈', '🥺', '😴', '🤯', '🥳'];
     const COLORS = ['#000000', '#FF0000', '#0000FF', '#00AA00', '#FFD700', '#800080', '#FF8C00', '#FF69B4'];
     const WIDTHS = [3, 6, 12];
     const DRAWING_DURATION = 45;
@@ -1332,6 +1332,16 @@
       });
     }
 
+    const _avCache = [];
+    function _preloadAvatars() {
+      VEGETABLES.forEach(v => EMOTIONS.forEach(e => {
+        const img = new Image();
+        img.src = ekUrl(v, e);
+        _avCache.push(img);
+      }));
+    }
+    setTimeout(_preloadAvatars, 100);
+
     function _populateAvatarModal() {
       const veg = VEGETABLES[state._modalVeg ?? 0];
       const emo = EMOTIONS[state._modalEmo ?? 0];
@@ -1388,7 +1398,7 @@
         SOUND.sparkle();
         const sq = document.getElementById('lobby-avatar-square');
         if (sq) {
-          sq.innerHTML = renderAvatar({ veg, emotion: emo }, 100) + '<button class="avatar-edit-btn" id="btn-open-avatar">✏️</button>';
+          sq.innerHTML = renderAvatar({ veg, emotion: emo }, 100) + `<button class="avatar-edit-btn" id="btn-open-avatar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>`;
           updateAvatarPreviews(sq);
         }
         document.getElementById('avatar-modal')?.classList.remove('open');
@@ -2208,7 +2218,7 @@
 
       const avatarSquareHTML = `
         <div class="avatar-square" id="lobby-avatar-square">
-          <button class="avatar-edit-btn" id="btn-open-avatar">✏️</button>
+          <button class="avatar-edit-btn" id="btn-open-avatar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
         </div>
       `;
 
@@ -2291,7 +2301,7 @@
       const sq = $('#lobby-avatar-square');
       if (sq && me) {
         const h = sq.innerHTML;
-        sq.innerHTML = renderAvatar(me, 100) + '<button class="avatar-edit-btn" id="btn-open-avatar">✏️</button>';
+        sq.innerHTML = renderAvatar(me, 100) + '<button class="avatar-edit-btn" id="btn-open-avatar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="display:block"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>';
         updateAvatarPreviews(sq);
       }
 
@@ -2302,11 +2312,11 @@
         if (d && o) { d.classList.add('open'); o.classList.add('open'); }
       }
 
-      // Avatar modal open
-      const openBtn = $('#btn-open-avatar');
-      if (openBtn) {
-        openBtn.addEventListener('click', () => {
-          if (!me) return;
+      // Avatar modal open (event delegation on the square)
+      const asq = $('#lobby-avatar-square');
+      if (asq) {
+        asq.addEventListener('click', e => {
+          if (!me || !e.target.closest('.avatar-edit-btn')) return;
           state._modalVeg = VEGETABLES.indexOf(me.veg || '🥕');
           state._modalEmo = EMOTIONS.indexOf(me.emotion || '😊');
           state._modalTab = 'veg';
