@@ -2755,12 +2755,6 @@
             statusEl.style.display = 'none';
           }
 
-          // Show/hide alias target based on current mode
-          const curMode = data.gameMode || 'impostor';
-          const roundsDiv = $('#cfg-rounds-container').parentElement;
-          if (roundsDiv) roundsDiv.style.display = curMode === 'alias' ? 'none' : '';
-          $('#cfg-alias-score-container').style.display = curMode === 'alias' ? '' : 'none';
-
           state._cfgRounds = data.maxRounds || 3;
           state._cfgMode = data.gameMode || 'impostor';
           state._cfgAliasTarget = data.aliasTargetScore || ALIAS_TARGET_SCORE;
@@ -3909,12 +3903,6 @@
               })()}
             </div>
           ` : ''}
-
-          <div class="text-center mt-8">
-            <button id="btn-new-game" class="btn-mint px-8 py-4 text-xl font-bold">🔄 משחק חדש</button>
-          </div>
-        </div>
-      `;
 
           <div class="text-center mt-8">
             <button id="btn-new-game" class="btn-mint px-8 py-4 text-xl font-bold">🔄 משחק חדש</button>
