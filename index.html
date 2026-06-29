@@ -1381,6 +1381,17 @@
       return 'https://emojik.vercel.app/s/' + encodeURIComponent(veg) + '_' + encodeURIComponent(emotion) + '?size=128';
     }
 
+    function _gameModeImg(modeId) {
+      const map = {
+        'impostor': 'תמונת_סמל_משחקהמתחזה.png',
+        'alias': 'תמונת_סמל_משחקאליאס.png',
+        'broken-phone': 'תמונת_סמל_משחקטלפון שבור.png',
+      };
+      const src = map[modeId];
+      if (!src) return '';
+      return '<img src="' + src + '" style="width:100%;max-width:260px;height:auto;display:block;margin:0 auto;border-radius:12px">';
+    }
+
     function renderAvatar(p, size) {
       const sz = size || 48;
       const veg = p.veg || p.avatar?.[0] || '🥕';
@@ -2462,6 +2473,7 @@
                   <span id="btn-show-create" style="cursor:pointer;color:rgba(255,255,255,0.35);font-size:13px;font-weight:400;text-decoration:underline;text-underline-offset:3px">צור משחק חדש</span>
                 </div>
               ` : flow === 'verify' ? `
+                <div class="mb-3">${_gameModeImg(state._verifiedGameMode)}</div>
                 <div class="text-center mb-2">
                   <span class="section-title">קוד חדר</span>
                   <div class="text-2xl font-black tracking-widest mt-1" style="color:#00e5a0">${code}</div>
@@ -2531,6 +2543,7 @@
             const data = doc.data();
             if (data.phase !== 'lobby') { showError('המשחק כבר התחיל'); verifyBtn.disabled = false; verifyBtn.classList.remove('btn-loading'); return; }
             state._verifiedCode = code;
+            state._verifiedGameMode = data.gameMode || DEFAULT_GAME_MODE;
             state._joinVeg = VEGETABLES[Math.floor(Math.random() * VEGETABLES.length)];
             state._joinEmo = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
             state._joinFlow = 'verify';
@@ -2713,6 +2726,8 @@
               </div>
             </div>
 
+            <div class="mb-4">${_gameModeImg(data.gameMode)}</div>
+
             <div class="text-center mb-4">
               <div class="font-black" style="color:#00e5a0;font-size:3rem">${me?.name || ''}</div>
             </div>
@@ -2752,6 +2767,7 @@
         const gm = GAME_MODES.find(m => m.id === (data.gameMode || DEFAULT_GAME_MODE));
         container.innerHTML = `
           <div class="max-w-md mx-auto text-center">
+            <div class="mb-4">${_gameModeImg(data.gameMode)}</div>
             <div class="glass-card p-6 mb-4">
               <div class="section-title mb-2">הכינוי שלך</div>
               <div class="font-black text-white" style="font-size:5.625rem">${me?.name || '...'}</div>
