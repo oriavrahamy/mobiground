@@ -3444,21 +3444,28 @@
                 <div class="player-avatar" style="width:36px;height:36px;font-size:18px">${renderAvatar(explainer, 36)}</div>
                 <span class="font-bold text-xl" style="color:#00e5a0">${explainer?.name || '?'}</span>
               </div>
-              <p class="font-bold text-lg">מסביר כרגע...</p>
+              <p class="font-bold text-lg">${guessed ? 'המילה הייתה:' : 'מסביר כרגע...'}</p>
               <div class="flex gap-1 justify-center mt-2">
-                ${Array.from({ length: data.aliasWord?.length || 0 }, (_, i) => `<span class="inline-block w-6 h-8 border-b-2 border-[#00e5a0] mx-0.5 text-center font-bold text-lg" style="color:#00e5a0"></span>`).join('')}
+                ${guessed
+                  ? `<span class="text-4xl font-black" style="color:#00e5a0;letter-spacing:2px">${data.aliasWord}</span>`
+                  : Array.from({ length: data.aliasWord?.length || 0 }, (_, i) => `<span class="inline-block w-6 h-8 border-b-2 border-[#00e5a0] mx-0.5 text-center font-bold text-lg" style="color:#00e5a0"></span>`).join('')}
               </div>
             </div>
           ` : `
             <div class="glass-card p-4 mb-3 text-center">
-              <p class="font-bold mb-2" style="color:#00e5a0">זה התור שלך! תסביר לחברים!</p>
-              <div class="text-4xl font-black mb-3" style="color:#fff;letter-spacing:2px">${data.aliasWord}</div>
-              <div class="flex flex-wrap gap-2 justify-center mb-2">
-                ${(data.aliasTaboo || []).map(t => `<span class="px-3 py-1 font-bold text-sm" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.4);border-radius:8px;color:#ff6b6b">✕ ${t}</span>`).join('')}
-              </div>
-              ${!data.aliasSkipUsed?.[state.user?.uid] ? `
-                <button id="btn-skip-word" class="btn-purple px-4 py-1 text-sm font-bold">דלג (−1 נק')</button>
-              ` : ''}
+              ${guessed ? `
+                <p class="font-bold mb-2" style="color:#00e5a0">המילה נוחשה!</p>
+                <div class="text-4xl font-black mb-3" style="color:#fff;letter-spacing:2px">${data.aliasWord}</div>
+              ` : `
+                <p class="font-bold mb-2" style="color:#00e5a0">זה התור שלך! תסביר לחברים!</p>
+                <div class="text-4xl font-black mb-3" style="color:#fff;letter-spacing:2px">${data.aliasWord}</div>
+                <div class="flex flex-wrap gap-2 justify-center mb-2">
+                  ${(data.aliasTaboo || []).map(t => `<span class="px-3 py-1 font-bold text-sm" style="background:rgba(255,107,107,0.2);border:1px solid rgba(255,107,107,0.4);border-radius:8px;color:#ff6b6b">✕ ${t}</span>`).join('')}
+                </div>
+                ${!data.aliasSkipUsed?.[state.user?.uid] ? `
+                  <button id="btn-skip-word" class="btn-purple px-4 py-1 text-sm font-bold">דלג (−1 נק')</button>
+                ` : ''}
+              `}
             </div>
           `}
 
